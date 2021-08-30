@@ -15,17 +15,14 @@ knitr::opts_chunk$set(echo = TRUE)
 He is from Shantou, Guangdong, China.
 
 ## Journey on Data Science
-He graduated from Fudan University. He was studying Information Systems. He was fascinated by the power of data and determined to pursue data science as career path.
+He graduated from Fudan University. He studied Information Systems. He was fascinated by the power of utilizing data to solve problems and determined to pursue data science as a career path.
 
 ## Favorite Food
-His favorite food is Hot pot.
-
+His favorite food is Hot Pot and during breaks, he would eat Hot Pot once a week.
 ## Hobbies
-Archery
+His hobby is Archery which he started during freshman year. He won a bronze medal in 2019's National Univerity Championship.
 
 ## Favorite books/movies/artists
-Three-Body Problem
-The Lord of the Ring
-Miyazaki
+His favorite book is 'Three-Body Problem', favorite movies is 'The Lord of the Ring', and Miyazaki, a game developer, is his favorite artist.
 
 
