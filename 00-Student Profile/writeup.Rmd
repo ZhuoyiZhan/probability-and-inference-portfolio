@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Getting to know Shuyang Lin
 
-## Homwtown
+## Hometown
 He is from Shantou, Guangdong, China.
 
 ## Journey on Data Science
