@@ -168,16 +168,212 @@ pre code {
 </div>
 
 
-<p><code>{r setup, include=FALSE} knitr::opts_chunk$set(echo = TRUE)</code></p>
-<p>single_spin &lt;- function(){ possible_outcomes &lt;- c(rep(“red”,18), rep(“black”,18), rep(“green”,2)) sample(possible_outcomes, 1) }</p>
-<p>martingale_wager &lt;- function( previous_wager , previous_outcome , max_wager , current_budget ){ if(previous_outcome == “red”) return(1) min(2*previous_wager, max_wager, current_budget) }</p>
-<p>one_play &lt;- function(previous_ledger_entry, max_wager){ # Create a copy of the input object that will become the output object out &lt;- previous_ledger_entry out[1, “game_index”] &lt;- previous_ledger_entry[1, “game_index”] + 1 out[1, “starting_budget”] &lt;- previous_ledger_entry[1, “ending_budget”] out[1, “wager”] &lt;- martingale_wager( previous_wager = previous_ledger_entry[1, “wager”] , previous_outcome = previous_ledger_entry[1, “outcome”] , max_wager = max_wager , current_budget = out[1, “starting_budget”] ) out[1, “outcome”] &lt;- single_spin() out[1, “ending_budget”] &lt;- out[1, “starting_budget”] + ifelse(out[1, “outcome”] == “red”, +1, -1)*out[1, “wager”] return(out) }</p>
-<p>one_series &lt;- function( max_games, starting_budget, winning_threshold, max_wager ){ # Initialize ledger ledger &lt;- data.frame( game_index = 0:max_games , starting_budget = NA_integer_ , wager = NA_integer_ , outcome = NA_character_ , ending_budget = NA_integer_ ) ledger[1, “wager”] &lt;- 1 ledger[1, “outcome”] &lt;- “red” ledger[1, “ending_budget”] &lt;- starting_budget for(i in 2:nrow(ledger)){ #browser() ledger[i,] &lt;- one_play(ledger[i-1,], max_wager) if(stopping_rule(ledger[i,], winning_threshold)) break } # Return non-empty portion of ledger ledger[2:i, ] }</p>
-<p>stopping_rule &lt;- function( ledger_entry , winning_threshold ){ ending_budget &lt;- ledger_entry[1, “ending_budget”] if(ending_budget &lt;= 0) return(TRUE) if(ending_budget &gt;= winning_threshold) return(TRUE) FALSE }</p>
-<p>profit &lt;- function(ledger){ n &lt;- nrow(ledger) profit &lt;- ledger[n, “ending_budget”] - ledger[1, “starting_budget”] return(profit) }</p>
-<p>require(magrittr)</p>
-<p>svg(filename = “loser.svg”, width=16, height =9) par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255)) set.seed(1) ledger &lt;- one_series(200,200,300,500) plot(ledger[,c(1,5)], type = “l”, lwd = 5, xlab = “Game Index”, ylab = “Budget”) dev.off()</p>
-<p>svg(filename = “winner.svg”, width=16, height =9) par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255)) set.seed(2) l2 &lt;- one_series(200,200,300,500) plot(l2[,c(1,5)], type = “l”, lwd = 5, xlab = “Game Index”, ylab = “Budget”) dev.off()</p>
+<div id="roulette" class="section level1">
+<h1>01-roulette</h1>
+<div id="zhuoyi-zhan" class="section level3">
+<h3>Zhuoyi Zhan</h3>
+</div>
+<div id="september-06-2021" class="section level3">
+<h3>September 06, 2021</h3>
+</div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this question I want to answer the question to decide if Martingale strategy is always profitable. The purpose is to use programming to simulate real-life roulette, calculate average earning of the Martingale betting strategy and see if different input parameters would impact the average earnings. ## 1.1 Backgound Roulette is a popular gambling game. If player guess right, he/she will get her money back and win wager amount. The Martingale is a common betting strategy that seems to guarantee return. We try to estimate the earning yield from this strategy by setting starting budget, winning threshold, maximum wager, and maximum game to play like in real life. In this simulation, functions help to accomplish tasks like spinning wheels, recording outcomes and calculating budget. We also want to see what results input parameters lead to, i.e. by changing starting budget, maximum wager, maximum game The key property is the average earning whichderived from repeating the simulation several times and taking means. ## 2 Methods In this</p>
+<pre class="r"><code>#This step we are trying to  simulate spinning the roulette. sample() is a function can take a random sample from the data object. In this case, yield a result from 18 red, 18 black, and 2 green
+single_spin &lt;- function(){
+  possible_outcomes &lt;- c(rep(&quot;red&quot;,18), rep(&quot;black&quot;,18), rep(&quot;green&quot;,2))
+  sample(possible_outcomes, 1)
+}
+
+#This step is trying to simulate the betting strategy. It receives input of previous wager, last spinning result, maximum wager that casino set and how much much palyer left with. If last spin player get red, then keep bet $1 on red, else, 2 times the previous wager but it should not exceed player&#39;s current budget or maximum wager allowed.
+
+martingale_wager &lt;- function(
+  previous_wager
+  , previous_outcome
+  , max_wager
+  , current_budget
+){
+  if(previous_outcome == &quot;red&quot;) return(1)
+  min(2*previous_wager, max_wager, current_budget)
+}
+
+one_play &lt;- function(previous_ledger_entry, max_wager){
+  # Create a copy of the input object that will become the output object
+  out &lt;- previous_ledger_entry
+  out[1, &quot;game_index&quot;] &lt;- previous_ledger_entry[1, &quot;game_index&quot;] + 1
+  #game index is increasing with the number of game played. 
+  out[1, &quot;starting_budget&quot;] &lt;- previous_ledger_entry[1, &quot;ending_budget&quot;]
+  #Each game, player have budget of what they left from last game.
+  out[1, &quot;wager&quot;] &lt;- martingale_wager(
+    previous_wager = previous_ledger_entry[1, &quot;wager&quot;]
+    , previous_outcome = previous_ledger_entry[1, &quot;outcome&quot;]
+    , max_wager = max_wager
+    , current_budget = out[1, &quot;starting_budget&quot;]
+  )
+  #To get and record this time&#39;s wager in, it call martingale_wager() function with last time&#39;s wager, outcomes,max wager and this time&#39;s starting budget.
+  out[1, &quot;outcome&quot;] &lt;- single_spin()
+  # Calling the single_spin() function to get an outcome and record.
+  out[1, &quot;ending_budget&quot;] &lt;- out[1, &quot;starting_budget&quot;] + 
+    ifelse(out[1, &quot;outcome&quot;] == &quot;red&quot;, +1, -1)*out[1, &quot;wager&quot;]
+  return(out)
+  #the new ending budget will be starting budget plus wager if outcome is red, or minus wager is not red.
+}
+
+one_series &lt;- function(
+  max_games, starting_budget, winning_threshold, max_wager
+){
+  # Initialize ledger
+  ledger &lt;- data.frame(
+      game_index = 0:max_games
+    , starting_budget = NA_integer_
+    , wager = NA_integer_
+    , outcome = NA_character_
+    , ending_budget = NA_integer_
+  )#this defines the variable types.
+  ledger[1, &quot;wager&quot;] &lt;- 1
+  ledger[1, &quot;outcome&quot;] &lt;- &quot;red&quot;
+  ledger[1, &quot;ending_budget&quot;] &lt;- starting_budget
+  # the wager starts with 1.
+  for(i in 2:nrow(ledger)){
+    #browser()
+    ledger[i,] &lt;- one_play(ledger[i-1,], max_wager)
+    # i is this time, i-1 refer to the last game. By calling one_play() with last game, this step keeps recording every game played.
+    if(stopping_rule(ledger[i,], winning_threshold)) break
+  } #this will check if the plyyer reaches stopping rules. If yes then stop.
+  # Return non-empty portion of ledger
+  ledger[2:i, ]
+}
+
+stopping_rule &lt;- function(
+  ledger_entry
+  , winning_threshold
+){
+  ending_budget &lt;- ledger_entry[1, &quot;ending_budget&quot;]
+  if(ending_budget &lt;= 0) return(TRUE)
+  if(ending_budget &gt;= winning_threshold) return(TRUE)
+  FALSE
+}# The rule to stop are when running out of money or now having money that is equal or more than winning threshold. 
+
+profit &lt;- function(ledger){
+  n &lt;- nrow(ledger)
+  profit &lt;- ledger[n, &quot;ending_budget&quot;] - ledger[1, &quot;starting_budget&quot;]
+  return(profit)
+} # The profit equals to last game&#39;s budget minus budget at first.
+
+require(magrittr)</code></pre>
+<pre><code>## Loading required package: magrittr</code></pre>
+<pre class="r"><code># It creates figures of winning and losing with starting budget of $200, winning threshold of $300, maximum 1000 plays and maximum wager of $100
+svg(filename = &quot;loser.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(1)
+ledger &lt;- one_series(1000,200,300,100)
+plot(ledger[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code>svg(filename = &quot;winner.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(2)
+l2 &lt;- one_series(1000,200,300,100)
+plot(l2[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+</div>
+<div id="results" class="section level2">
+<h2>3 Results</h2>
+<pre class="r"><code>nlength &lt;- 10
+output_list &lt;- vector(mode = &quot;list&quot;, length = nlength)
+for (i in seq(1, 10, by=1)){
+  set.seed(i)
+  l &lt;- one_series(1000,200,300,100)
+  output_list[i] &lt;- profit(l)
+}
+
+print(output_list)</code></pre>
+<pre><code>## [[1]]
+## [1] -200
+## 
+## [[2]]
+## [1] 100
+## 
+## [[3]]
+## [1] 100
+## 
+## [[4]]
+## [1] -200
+## 
+## [[5]]
+## [1] -200
+## 
+## [[6]]
+## [1] 100
+## 
+## [[7]]
+## [1] -200
+## 
+## [[8]]
+## [1] 100
+## 
+## [[9]]
+## [1] 100
+## 
+## [[10]]
+## [1] -200</code></pre>
+<pre class="r"><code>svg(filename = &quot;WT_loser_300.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(1)
+ledger &lt;- one_series(1000,200,300,100)
+plot(ledger[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code>svg(filename = &quot;WT_loser_250.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(1)
+ledger &lt;- one_series(1000,200,250,100)
+plot(ledger[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code>svg(filename = &quot;WT_loser_400.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(1)
+ledger &lt;- one_series(1000,200,400,100)
+plot(ledger[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code>svg(filename = &quot;WT_winne_250.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(2)
+l2 &lt;- one_series(1000,200,250,100)
+plot(l2[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+
+svg(filename = &quot;WT_winne_300.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(2)
+l2 &lt;- one_series(1000,200,300,100)
+plot(l2[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code>svg(filename = &quot;WT_winne_400.svg&quot;, width=16, height =9)
+par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255))
+set.seed(2)
+l2 &lt;- one_series(1000,200,400,100)
+plot(l2[,c(1,5)], type = &quot;l&quot;, lwd = 5, xlab = &quot;Game Index&quot;, ylab = &quot;Budget&quot;)
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>From the svg figures, we can see by changing winning threshold. A lower threshold results in faster win and higher threshold results in slower win. But for losing, threshold does not matter.</p>
+</div>
+<div id="conclusions" class="section level2">
+<h2>4 Conclusions</h2>
+<p>By changing the input parameter and repeatedly simulate, we find that Martingale betting strategy does not guarantee earnings. A player can reach winning threshold or lose all money. The average earning is (still working on the loop). So this strategy is not always profitable. A lower threshold results in faster win and higher threshold results in slower win.</p>
+</div>
+</div>
 
 
 
