@@ -168,25 +168,16 @@ pre code {
 </div>
 
 
-<div id="getting-to-know-shuyang-lin" class="section level2">
-<h2>Getting to know Shuyang Lin</h2>
-</div>
-<div id="hometown" class="section level2">
-<h2>Hometown</h2>
-<p>He is from Shantou, Guangdong, China.</p>
-</div>
-<div id="journey-on-data-science" class="section level2">
-<h2>Journey on Data Science</h2>
-<p>He graduated from Fudan University. He studied Information Systems. He was fascinated by the power of utilizing data to solve problems and determined to pursue data science as a career path.</p>
-</div>
-<div id="favorite-food" class="section level2">
-<h2>Favorite Food</h2>
-<p>His favorite food is Hot Pot and during breaks, he would eat Hot Pot once a week. ## Hobbies His hobby is Archery which he started during freshman year. He won a bronze medal in 2019’s National Univerity Championship.</p>
-</div>
-<div id="favorite-booksmoviesartists" class="section level2">
-<h2>Favorite books/movies/artists</h2>
-<p>His favorite book is ‘Three-Body Problem’, favorite movies is ‘The Lord of the Ring’, and Miyazaki, a game developer, is his favorite artist.</p>
-</div>
+<p><code>{r setup, include=FALSE} knitr::opts_chunk$set(echo = TRUE)</code></p>
+<p>single_spin &lt;- function(){ possible_outcomes &lt;- c(rep(“red”,18), rep(“black”,18), rep(“green”,2)) sample(possible_outcomes, 1) }</p>
+<p>martingale_wager &lt;- function( previous_wager , previous_outcome , max_wager , current_budget ){ if(previous_outcome == “red”) return(1) min(2*previous_wager, max_wager, current_budget) }</p>
+<p>one_play &lt;- function(previous_ledger_entry, max_wager){ # Create a copy of the input object that will become the output object out &lt;- previous_ledger_entry out[1, “game_index”] &lt;- previous_ledger_entry[1, “game_index”] + 1 out[1, “starting_budget”] &lt;- previous_ledger_entry[1, “ending_budget”] out[1, “wager”] &lt;- martingale_wager( previous_wager = previous_ledger_entry[1, “wager”] , previous_outcome = previous_ledger_entry[1, “outcome”] , max_wager = max_wager , current_budget = out[1, “starting_budget”] ) out[1, “outcome”] &lt;- single_spin() out[1, “ending_budget”] &lt;- out[1, “starting_budget”] + ifelse(out[1, “outcome”] == “red”, +1, -1)*out[1, “wager”] return(out) }</p>
+<p>one_series &lt;- function( max_games, starting_budget, winning_threshold, max_wager ){ # Initialize ledger ledger &lt;- data.frame( game_index = 0:max_games , starting_budget = NA_integer_ , wager = NA_integer_ , outcome = NA_character_ , ending_budget = NA_integer_ ) ledger[1, “wager”] &lt;- 1 ledger[1, “outcome”] &lt;- “red” ledger[1, “ending_budget”] &lt;- starting_budget for(i in 2:nrow(ledger)){ #browser() ledger[i,] &lt;- one_play(ledger[i-1,], max_wager) if(stopping_rule(ledger[i,], winning_threshold)) break } # Return non-empty portion of ledger ledger[2:i, ] }</p>
+<p>stopping_rule &lt;- function( ledger_entry , winning_threshold ){ ending_budget &lt;- ledger_entry[1, “ending_budget”] if(ending_budget &lt;= 0) return(TRUE) if(ending_budget &gt;= winning_threshold) return(TRUE) FALSE }</p>
+<p>profit &lt;- function(ledger){ n &lt;- nrow(ledger) profit &lt;- ledger[n, “ending_budget”] - ledger[1, “starting_budget”] return(profit) }</p>
+<p>require(magrittr)</p>
+<p>svg(filename = “loser.svg”, width=16, height =9) par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255)) set.seed(1) ledger &lt;- one_series(200,200,300,500) plot(ledger[,c(1,5)], type = “l”, lwd = 5, xlab = “Game Index”, ylab = “Budget”) dev.off()</p>
+<p>svg(filename = “winner.svg”, width=16, height =9) par(cex.axis=2, cex.lab = 2, mar = c(8,8,2,2), bg = rgb(222, 235, 247, max = 255)) set.seed(2) l2 &lt;- one_series(200,200,300,500) plot(l2[,c(1,5)], type = “l”, lwd = 5, xlab = “Game Index”, ylab = “Budget”) dev.off()</p>
 
 
 
