@@ -1,0 +1,79 @@
+---
+title: "Title of Blog Post Deliverable"
+author: ' Your Full Name'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE, cache=TRUE)
+```
+
+# Introduction 
+
+In this question I want to answer the question to decide if Martingale strategy is always profitable. The purpose is to use programming to simulate real-life roulette, calculate average earning of the Martingale betting strategy and see if different input parameters would impact the average earnings. 
+
+## Background
+
+Roulette is a popular gambling game. If player guess right, he/she will get her money back and win wager amount. The Martingale is a common betting strategy that seems to guarantee return. We try to estimate the earning yield from this strategy by setting starting budget, winning threshold, maximum wager, and maximum game to  play like in real life. 
+In this simulation, functions help to accomplish tasks like spinning wheels, recording outcomes and calculating budget. We also want to see what results input parameters lead to, i.e. by changing starting budget, maximum wager, maximum game  The key property is the average earning whichderived from repeating the simulation several times and taking
+
+# Methods
+
+Here will be the majority of your code (simulations, functions, game theory, etc.). Be sure to comment your code so that Tom and the TA’s can read through it easily.
+
+```{r}
+# This is a code comment
+
+# we want a success vector with n is the sample size and p the probability of success
+n=100
+p=0.2
+success.vec = rbinom(n,1,p)
+
+# Histogram to analyze frequencies of success vector
+hist(success.vec)
+```
+
+Explain all of your output for example here we would have a sentence explaining the histogram.
+
+# Results
+
+```{r}
+# Summary of success vector
+summary(success.vec)
+```
+
+Sentence explaining summary statistics.
+
+## Hints
+
+This is how you report inline stats like the mean: `r mean(success.vec)`.
+
+You may include latex if needed: 
+
+$$P(AB)=P(A)+ P(B) - P(AB)$$
+
+Here is an example inline Table:
+
+| One | Two | Three | Four |
+|:---:|:---:|:-----:|:----:|
+|  1  |   1 |  a    |  -1  |
+|  2  |   2 |  b    |   -3 |
+|  3  |   4 |  c    |   +1 |
+
+This is how you include an image:
+
+![Caption: Image of Dog.](/Users/meganhollister/Library/Mobile Documents/com~apple~CloudDocs/Documents/Vanderbilt/Fall 2020/TA DS Prob/TA-Resources-DS-5620/Blog Template/dog.png){#id .class width=50% height=50%}
+
+# Conclusions
+
+Clearly outline the conclusions you have made from the methods (simulations, functions, game theory, etc.). You must answer EVERY question mentioned in the assignment. Again this is an example of how to write a blog post and you may not always need all of the sections (Introduction, Background, Methods, Results, Conclusions).
+
+Be prepared to share your blog post with the class when the deliverable is due. The deliverable should be your own work. You may discuss concepts with classmates, but you may NOT share code or text.
+
