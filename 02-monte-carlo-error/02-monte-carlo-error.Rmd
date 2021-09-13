@@ -1,0 +1,142 @@
+---
+title: "02-monte-carlo-error"
+author: ' Zhuoyi Zhan'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+Monte Carlo simulations are used to obtain probability of an uncertain events. Typically, the simulation will be repeated to  get approximate results. Each simulation will have variability called error. We will explore the relationship of repetitions and simulation error
+
+## Background
+The true probability is p, the estimated probability we get from simulation is p hat. Absolute error is the absolute value of the difference between p and p hat. Relative error is absolute error divided by p.
+# Methods
+
+```{r} 
+#install.packages("devtools")
+#library(devtools)
+
+#devtools::install_github("https://github.com/thomasgstewart/tgsify.git")
+```
+In this simulation, we will use probability of 0.01, 0.05, 0.1, 0.25, and 0.5. We will use the replicate numbers: 2^2, 2^3, ...,2^15 times and graph the absolute and relative errors against the repeated times.
+```{r}
+require(tgsify)
+# we first create a "container" to initialize the input parameters, 5 probability and replicate number from 2^2 to 2^15. It enables a 14 X 5 factorial simulation.
+output <- expand.grid(
+  N = 2^c(2:15)
+  , P = c(0.01, 0.05, 0.10, 0.25, 0.50)
+  , abs_error = NA
+  , rel_error = NA
+  , KEEP.OUT.ATTRS = FALSE
+)
+
+# we will generate 10000 observations each run
+r <- 10000
+
+for (i in 1: nrow(output)){
+  p <- output$P[i]
+  n <- output$N[i]
+  phat <- rbinom(r,n,p)/n
+  output[i, "abs_error"] <- mean(abs(phat-p))
+  output[i, "rel_error"] <- mean(abs(phat-p)/p)
+}
+```
+
+### Figure: Absolute Error in log2 scale
+```{r} 
+output %>% 
+  mutate(x = log2(N)) %>%
+  mutate(col = as.factor(P) %>% as.numeric) %>%
+  plotstyle(upright) %>%
+  plot_setup(abs_error ~ x, c(0, 15), c(0,0.2)) %>% 
+  split(.$P) %>%
+  lwith({
+    lines(x, abs_error, col = col[1], lwd =5, type = "b", pch = 16)
+    text(x[1], abs_error[1], "p="%|%P[1], pos =2)
+  })
+  
+  
+axis(2, at = axTicks(2), labels= sprintf("%4.3f", 10^axTicks(2)), xlab="N(log2 scale)", ylab ="Absolute Error")
+axis(1, at = axTicks(1), labels=2^axTicks(1))
+box()
+
+```
+The absolute error decrease as the replicates number increase and the higher the probability, the higher the absolute error. For all five probability, they decrease drastically when less than 1024 and decrease little after 1024.
+
+### Figure: Absolute Error in log10 scale
+```{r}
+output %>% 
+  mutate(x=log2(N)) %>%
+  mutate(abs_error =log10(abs_error)) %>%
+  mutate(col = as.factor(P) %>% as.numeric) %>%
+  plotstyle(upright) %>%
+  plot_setup(abs_error ~ x, c(0, 15)) %>% 
+  split(.$P) %>%
+  lwith({
+    lines(x, abs_error, col = col[1], lwd =5, type = "b", pch = 16)
+    text(x[1], abs_error[1], "p="%|%P[1], pos =2)
+  })
+  
+  
+axis(2, at = axTicks(2), labels= sprintf("%4.3f", 10^axTicks(2)))
+axis(1, at = axTicks(1), labels=2^axTicks(1))
+box()
+```     
+The absolute error has a linear relationship with relates number. The higher the simulation replicates and the lower the probability, the lower the absolute error.
+
+### Figure: Relative Error in log2 scale
+```{r}
+output %>% 
+  mutate(x = log2(N)) %>%
+  mutate(col = as.factor(P) %>% as.numeric) %>%
+  plotstyle(upright) %>%
+  plot_setup(rel_error ~ x, c(0, 15)) %>% 
+  split(.$P) %>%
+  lwith({
+    lines(x, rel_error, col = col[1], lwd =5, type = "b", pch = 16)
+    text(x[1], rel_error[1], "p="%|%P[1], pos =2)
+  })
+  
+  
+axis(2, at = axTicks(2), labels= sprintf("%4.3f", 10^axTicks(2)))
+axis(1, at = axTicks(1), labels=2^axTicks(1))
+box()
+```
+The relative error decrease as the relates number increase and the lower the probability, the higher the absolute error. The relative errors decrease drastically when less than 1024 and decrease little after 1024.
+
+
+### Figure: Relative Error in log10 scale
+```{r}
+output %>% 
+  mutate(x = log2(N)) %>%
+  mutate(rel_error =log10(rel_error)) %>%
+  mutate(col = as.factor(P) %>% as.numeric) %>%
+  plotstyle(upright) %>%
+  plot_setup(rel_error ~ x, c(0, 15)) %>% 
+  split(.$P) %>%
+  lwith({
+    lines(x, rel_error, col = col[1], lwd =5, type = "b", pch = 16)
+    text(x[1], rel_error[1], "p="%|%P[1], pos =2)
+  })
+  
+  
+axis(2, at = axTicks(2), labels= sprintf("%4.3f", 10^axTicks(2)))
+axis(1, at = axTicks(1), labels=2^axTicks(1))
+box()
+```
+The relative error has a linear relationship with relates number. The higher the simulation replicates and the higher the probability, the lower the absolute error.
+
+
+# Conclusions
+From the four graphs, we can see that errors decrease as simulation replicate increase. When the replicate number is in log10 scale, the absolute error and relative error has a linear relationship with the replicates number. For absolute error the smaller the probability, the smaller the error while a smaller probability has higher relative error.
+

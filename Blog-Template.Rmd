@@ -1,0 +1,86 @@
+---
+title: "Title of Blog Post Deliverable"
+author: ' Your Full Name'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE, cache=TRUE)
+```
+
++ You MUST submit your first version of the assignment before 9am on the "First Submission Due Date"(unless otherwise specified). 
+
++ You MUST pass the assignment before or on the "Resubmission Final Due Date". 
+
+**How grading works:** You will be given the change to resubmit 2-3 times during the 2 weeks between the first given feedback and the Resubmission Final Due Date. This means you get a total of 4-5 "chances" to pass the assignment. Each time the TA will give you feedback about what to change in your code or your explanations. The TA that is grading that particular assignment will announce what dates they are grading each resubmission. 
+
++ This entire template is a "suggestion" and does not need to be followed 100%. 
+
+# Introduction 
+
+Here you will introduce the questions you would like to answer in this deliverable. What is the purpose of this assignment?
+
+## Background
+
+Give all background information needed for a “non-statistician” to be able to understand this deliverable.
+
+# Methods
+
+Here will be the majority of your code (simulations, functions, game theory, etc.). Be sure to comment your code so that Tom and the TA’s can read through it easily.
+
+```{r}
+# This is a code comment
+
+# we want a success vector with n is the sample size and p the probability of success
+n=100
+p=0.2
+success.vec = rbinom(n,1,p)
+
+# Histogram to analyze frequencies of success vector
+hist(success.vec)
+```
+
+Explain all of your output for example here we would have a sentence explaining the histogram.
+
+# Results
+
+```{r}
+# Summary of success vector
+summary(success.vec)
+```
+
+Sentence explaining summary statistics.
+
+## Hints
+
+This is how you report inline stats like the mean: `r mean(success.vec)`.
+
+You may include latex if needed: 
+
+$$P(AB)=P(A)+ P(B) - P(AB)$$
+
+Here is an example inline Table:
+
+| One | Two | Three | Four |
+|:---:|:---:|:-----:|:----:|
+|  1  |   1 |  a    |  -1  |
+|  2  |   2 |  b    |   -3 |
+|  3  |   4 |  c    |   +1 |
+
+This is how you include an image:
+
+![Caption: Image of Dog.](/Users/meganhollister/Library/Mobile Documents/com~apple~CloudDocs/Documents/Vanderbilt/Fall 2020/TA DS Prob/TA-Resources-DS-5620/Blog Template/dog.png){#id .class width=50% height=50%}
+
+# Conclusions
+
+Clearly outline the conclusions you have made from the methods (simulations, functions, game theory, etc.). You must answer EVERY question mentioned in the assignment. Again this is an example of how to write a blog post and you may not always need all of the sections (Introduction, Background, Methods, Results, Conclusions).
+
+Be prepared to share your blog post with the class when the deliverable is due. The deliverable should be your own work. You may discuss concepts with classmates, but you may NOT share code or text.
+
