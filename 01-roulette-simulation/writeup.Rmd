@@ -123,13 +123,14 @@ one_series <- function(
 get_last <- function(x) x[length(x)] 
 ```
 Possible Outcomes:
-### 1
+1
+
 ![Figure of wining](winner.svg){#id .class width=50% height=50%}
 
-### 2
+2
+
 ![Figure of losing](loser.svg){#id .class width=50% height=50%}
-
-
+We can see that one can either lose or win with Martingale strategy. Matigale is not 100% winning.
 
 
 Simulation for 1000 times:
@@ -141,8 +142,16 @@ for(j in seq_along(walk_out_money)){
 }
 
 # Walk out money distribution
-hist(walk_out_money, breaks = 100)
+#hist(walk_out_money, breaks = 100)
+wom <- data_frame(walk_out_money)
+View(wom)
 ```
+
+```{r}
+g1 <- ggplot(wom,aes(x=walk_out_money))+ geom_histogram(bins=100)
+g1
+```
+During 1000 games, The Roulette player either win $300 or lose all money.
 
 ```{r}
 # Estimated probability of walking out with extra cash
@@ -151,7 +160,7 @@ mean(walk_out_money > 200)
 # Estimated earnings
 mean(walk_out_money - 200)
 ```
-
+The probability that player would win $300 is 51.37% and the average earining for Roulette is -45.8854. So Matingale Startegy is not profitable.
 
 
 
