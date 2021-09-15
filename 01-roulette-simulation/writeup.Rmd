@@ -10,18 +10,152 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_chunk$set(dev = 'svg') # set output device to svg
 ```
 
 ## Introduction
+
 In this question I want to answer the question to decide if Martingale strategy is always profitable. The purpose is to use programming to simulate real-life roulette, calculate average earning of the Martingale betting strategy and see if different input parameters would impact the average earnings. 
+
 ## 1.1 Backgound
-Roulette is a popular gambling game. If player guess right, he/she will get her money back and win wager amount. The Martingale is a common betting strategy that seems to guarantee return. We try to estimate the earning yield from this strategy by setting starting budget, winning threshold, maximum wager, and maximum game to  play like in real life. 
-In this simulation, functions help to accomplish tasks like spinning wheels, recording outcomes and calculating budget. We also want to see what results input parameters lead to, i.e. by changing starting budget, maximum wager, maximum game  The key property is the average earning whichderived from repeating the simulation several times and taking means.
+
+Roulette is a popular gambling game. Starting at $1, if player guess right, he/she will get her money back and win double the bet. The Martingale is a common betting strategy that seems to guarantee return. When player lose souble the size of bet until winnig. We try to estimate the earning yielded by setting starting budget, winning threshold, maximum wager, and maximum game. The key to the average earning is repeating the simulations and taking means.
+
 ## 2 Methods
-In this 
+
+In this simulation, functions help to accomplish tasks like spinning wheels, recording outcomes and calculating budget.
 
 ```{r}
+library(dplyr)
+library(tidyverse)
+#' A single play of the Martingale strategy
+#'
+#' Takes a state list, spins the roulette wheel, returns the state list with updated values (for example, budget, plays, etc)
+#' @param state A list with the following entries: 
+#'   B              number, the budget
+#'   W              number, the budget threshold for successfully stoping
+#'   L              number, the maximum number of plays 
+#'   M              number, the casino wager limit
+#'   plays          integer, the number of plays executed
+#'   previous_wager number, the wager in the previous play (0 at first play)
+#'   previous_win   TRUE/FALSE, indicator if the previous play was a win (TRUE at first play)
+#' @return The updated state list
+one_play <- function(state){
+  
+    # Wager
+    proposed_wager <- ifelse(state$previous_win, 1, 2*state$previous_wager)
+    wager <- min(proposed_wager, state$M, state$B)
+    
+    # Spin of the wheel
+    red <- rbinom(1,1,18/38)
+    
+    # Update state
+    state$plays <- state$plays + 1
+    state$previous_wager <- wager
+    if(red){
+      # WIN
+      state$B <- state$B + wager
+      state$previous_win <- TRUE
+    }else{
+      # LOSE
+      state$B <- state$B - wager
+      state$previous_win <- FALSE
+    }
+  state
+}
 
+
+#' Stopping rule
+#'
+#' Takes the state list and determines if the gambler has to stop
+#' @param state A list.  See one_play
+#' @return TRUE/FALSE
+stop_play <- function(state){
+  if(state$B <= 0) return(TRUE) #plyers lose all money
+  if(state$plays >= state$L) return(TRUE) #player reaches max games
+  if(state$B >= state$W) return(TRUE) #player get to the budget threshold
+  FALSE
+}
+
+
+#' Play roulette to either bankruptcy, success, or play limits
+#'
+#' @param B number, the starting budget
+#' @param W number, the budget threshold for successfully stoping
+#' @param L number, the maximum number of plays 
+#' @param M number, the casino wager limit
+#' @return A vector of budget values calculated after each play.
+one_series <- function(
+    B = 200
+  , W = 300
+  , L = 1000
+  , M = 100
+){
+
+  # initial state
+  state <- list(
+    B = B
+  , W = W
+  , L = L
+  , M = M
+  , plays = 0
+  , previous_wager = 0
+  , previous_win = TRUE
+  )
+  
+  # vector to store budget over series of plays
+  budget <- rep(NA, L)
+  
+  # For loop of plays
+  for(i in 1:L){
+    new_state <- state %>% one_play
+    budget[i] <- new_state$B
+    if(new_state %>% stop_play){
+      return(budget[1:i])
+    }
+    state <- new_state
+  }
+  budget    
+}
+
+# helper function
+get_last <- function(x) x[length(x)] 
+```
+Possible Outcomes:
+### 1
+![Figure of wining](winner.svg){#id .class width=50% height=50%}
+
+### 2
+![Figure of losing](loser.svg){#id .class width=50% height=50%}
+
+
+
+
+Simulation for 1000 times:
+```{r}
+# Simulation
+walk_out_money <- rep(NA, 10000)
+for(j in seq_along(walk_out_money)){
+  walk_out_money[j] <- one_series(B = 200, W = 300, L = 1000, M = 100) %>% get_last
+}
+
+# Walk out money distribution
+hist(walk_out_money, breaks = 100)
+```
+
+```{r}
+# Estimated probability of walking out with extra cash
+mean(walk_out_money > 200)
+
+# Estimated earnings
+mean(walk_out_money - 200)
+```
+
+
+
+
+```{r}
 #This step we are trying to  simulate spinning the roulette. sample() is a function can take a random sample from the data object. In this case, yield a result from 18 red, 18 black, and 2 green
 single_spin <- function(){
   possible_outcomes <- c(rep("red",18), rep("black",18), rep("green",2))
@@ -120,7 +254,9 @@ l2 <- one_series(1000,200,300,100)
 plot(l2[,c(1,5)], type = "l", lwd = 5, xlab = "Game Index", ylab = "Budget")
 dev.off()
 ```
+
 ## 3 Results
+
 ```{r}
 nlength <- 10
 output_list <- vector(mode = "list", length = nlength)
