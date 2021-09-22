@@ -1,6 +1,6 @@
 ---
 title: "writeup"
-output: github_document
+output: html_document
 ---
 # 01-roulette
 ### Zhuoyi Zhan
@@ -32,8 +32,12 @@ Roulette is a popular gambling game. Starting at $1, if player guess right, he/s
 
 ## 2 Methods
 
-In this simulation, functions help to accomplish tasks like spinning wheels, recording outcomes and calculating budget.
-
+In this simulation, functions help to accomplish tasks like spinning wheels, recording outcomes and calculating budget. 
+First is to simulate spinning the roulette, single_spin() function is used to select 1 randomly from the population, in this case, 18 reds, 18 blacks, and 2 greens. 
+Next is simulation of martingale strategy which takes input of previous wager, outcome, max wager,and current budget. If last spin player get red, then keep bet $1 on red, else, 2 times the previous wager. 
+Then in one_play(), it will call the spin function and martingale_wager() function to simulate one play. It will take in last play's wager, outcome, game index and budgets to produce this play's wager, outcome, game index and budgets. 
+One_series initialize the ledger, a list with one row for one round, which will be inputted and outputted in one_play() and define the stopping rules. Finally, the profit is calculated by last game's budget minus budget at first.
+ 
 ```{r}
 library(dplyr)
 library(tidyverse)
@@ -47,7 +51,7 @@ single_spin <- function(){
   sample(possible_outcomes, 1)
 }
 
-#This step is trying to simulate the betting strategy. It receives input of previous wager, last spinning result, maximum wager that casino set and how much much palyer left with. If last spin player get red, then keep bet $1 on red, else, 2 times the previous wager but it should not exceed player's current budget or maximum wager allowed.
+#This step is trying to simulate the betting strategy. It receives input of previous wager, last spinning result, maximum wager that casino set and how much much player left with. If last spin player get red, then keep bet $1 on red, else, 2 times the previous wager but it should not exceed player's current budget or maximum wager allowed.
 
 martingale_wager <- function(
   previous_wager
@@ -101,7 +105,7 @@ one_series <- function(
     ledger[i,] <- one_play(ledger[i-1,], max_wager)
     # i is this time, i-1 refer to the last game. By calling one_play() with last game, this step keeps recording every game played.
     if(stopping_rule(ledger[i,], winning_threshold)) break
-  } #this will check if the plyyer reaches stopping rules. If yes then stop.
+  } #this will check if the player reaches stopping rules. If yes then stop.
   # Return non-empty portion of ledger
   ledger[2:i, ]
 }
@@ -154,7 +158,7 @@ We can see that one can either lose or win with Martingale strategy. Martingale 
 
 ### Simulation for 1000 times:
 
-This code creates a list to store each round's ending budget and compare with the starting budget $200 to get the earning. There are 1000 rounds and we calculate the average earning by get the means of all earning.
+This code runs roulette simulation 1000 times and creates a list to store each round's ending budget and compare with the starting budget $200 to get the earning. The ending budget for each round is recorded and we calculate the average earning by get the means of all earning.
 ```{r}
 # Simulation
 walk_out_money <- rep(NA, 1000)
@@ -191,13 +195,13 @@ The probability that player would win $300 is 51.37% and the average earnining f
 
 ### Change the winning threshold
 
-
+We run 1000 simulation for different winning threshold, 250, 275,300, 325,350 , and record every game's earning to see what impact winning threshold has on the average earning. 
 ```{r}
 # Simulation
 out <- rep(NA, 5)
 win_th <- c(250, 275, 300, 325, 350)
 for (i in (1:5)){
-  walk_out_money <- rep(NA, 100)
+  walk_out_money <- rep(NA, 1000)
   for(j in seq_along(walk_out_money)){
     data = one_series(1000, 200, win_th[i], 100)
   walk_out_money[j] <- (data$ending_budget)[length(data$ending_budget)]
@@ -217,7 +221,7 @@ From the above figures, we can see the impact of changing winning threshold from
 
 ### Average Numbers of Plays
 
-This code creates a list to store how many games are played in each round and there are 1000 rounds and we calculate the average number of play by get the means of all rounds.
+This code creates a list to store how many games are played in each round and there are 1000 rounds and we calculate the average number of play by getting the means of all rounds.
 ```{r}
 game_num <- rep(NA, 1000)
 for(j in seq_along(game_num)){
