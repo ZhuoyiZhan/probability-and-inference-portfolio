@@ -35,7 +35,19 @@ earning by repeating the simulations.
 ## 2 Methods
 
 In this simulation, functions help to accomplish tasks like spinning
-wheels, recording outcomes and calculating budget.
+wheels, recording outcomes and calculating budget. First is to simulate
+spinning the roulette, single\_spin() function is used to select 1
+randomly from the population, in this case, 18 reds, 18 blacks, and 2
+greens. Next is simulation of martingale strategy which takes input of
+previous wager, outcome, max wager,and current budget. If last spin
+player get red, then keep bet $1 on red, else, 2 times the previous
+wager. Then in one\_play(), it will call the spin function and
+martingale\_wager() function to simulate one play. It will take in last
+play’s wager, outcome, game index and budgets to produce this play’s
+wager, outcome, game index and budgets. One\_series initialize the
+ledger, a list with one row for one round, which will be inputted and
+outputted in one\_play() and define the stopping rules. Finally, the
+profit is calculated by last game’s budget minus budget at first.
 
 ``` r
 library(dplyr)
@@ -80,7 +92,7 @@ single_spin <- function(){
   sample(possible_outcomes, 1)
 }
 
-#This step is trying to simulate the betting strategy. It receives input of previous wager, last spinning result, maximum wager that casino set and how much much palyer left with. If last spin player get red, then keep bet $1 on red, else, 2 times the previous wager but it should not exceed player's current budget or maximum wager allowed.
+#This step is trying to simulate the betting strategy. It receives input of previous wager, last spinning result, maximum wager that casino set and how much much player left with. If last spin player get red, then keep bet $1 on red, else, 2 times the previous wager but it should not exceed player's current budget or maximum wager allowed.
 
 martingale_wager <- function(
   previous_wager
@@ -134,7 +146,7 @@ one_series <- function(
     ledger[i,] <- one_play(ledger[i-1,], max_wager)
     # i is this time, i-1 refer to the last game. By calling one_play() with last game, this step keeps recording every game played.
     if(stopping_rule(ledger[i,], winning_threshold)) break
-  } #this will check if the plyyer reaches stopping rules. If yes then stop.
+  } #this will check if the player reaches stopping rules. If yes then stop.
   # Return non-empty portion of ledger
   ledger[2:i, ]
 }
@@ -212,8 +224,9 @@ Martingale is not 100% profitable.
 
 ### Simulation for 1000 times:
 
-This code creates a list to store each round’s ending budget and compare
-with the starting budget $200 to get the earning. There are 1000 rounds
+This code runs roulette simulation 1000 times and creates a list to
+store each round’s ending budget and compare with the starting budget
+$200 to get the earning. The ending budget for each round is recorded
 and we calculate the average earning by get the means of all earning.
 
 ``` r
@@ -269,12 +282,16 @@ profitable and resulting in an average loss.
 
 ### Change the winning threshold
 
+We run 1000 simulation for different winning threshold, 250, 275,300,
+325,350 , and record every game’s earning to see what impact winning
+threshold has on the average earning.
+
 ``` r
 # Simulation
 out <- rep(NA, 5)
 win_th <- c(250, 275, 300, 325, 350)
 for (i in (1:5)){
-  walk_out_money <- rep(NA, 100)
+  walk_out_money <- rep(NA, 1000)
   for(j in seq_along(walk_out_money)){
     data = one_series(1000, 200, win_th[i], 100)
   walk_out_money[j] <- (data$ending_budget)[length(data$ending_budget)]
@@ -301,7 +318,7 @@ winning threshold has an impact on average earning.
 
 This code creates a list to store how many games are played in each
 round and there are 1000 rounds and we calculate the average number of
-play by get the means of all rounds.
+play by getting the means of all rounds.
 
 ``` r
 game_num <- rep(NA, 1000)
@@ -319,7 +336,7 @@ hist(game_num, breaks = 100)
 mean(game_num)
 ```
 
-    ## [1] 198.955
+    ## [1] 191.486
 
 This is the distribution of the average played game. The average number
 of plays is 206.884.
