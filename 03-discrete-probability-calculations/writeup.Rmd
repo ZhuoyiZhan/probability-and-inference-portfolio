@@ -1,0 +1,137 @@
+---
+title: "Title of Blog Post Deliverable"
+author: ' Zhuoyi Zhan'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  GitHub_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+The World Series is the annual championship series of Major League baseball. The winner is decided by a best of 7 match-up. In this blog, rules of probability and discrete probability will be used to answer a series of questions.
+
+## Background
+
+The Braves and the Yankees are competing. Suppose the Braves is the better team with a probability to win of 0.55 and the opponent, Yankees has a probability to win of (1 - 0.55).
+
+In a best of 7 match-up, a team needs to win 4 out 7 to win the World Series.
+
+|     Team     | P(win) | 
+|:------------:|:------:|
+|  the Braves  |  0.55  | 
+|  the Yankees |  0.45  | 
+
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+### What is the probability that the Braves win the World Series given that PB=0.55?
+
+To win in World Series, the Braves can win in 4th, 5th, 6th, 7th game because it needs to win 3 out of the first (N-1) games and the last game.
+
+|Game Index|             Score             |     Probability   |
+|:--------:|:-----------------------------:|:-----------------:|
+|     4    | win 3 game in 3 and last game | dnbinom(0,4,0.55) | 
+|     5    | win 3 game in 4 and last game | dnbinom(1,4,0.55) | 
+|     6    | win 3 game in 5 and last game | dnbinom(2,4,0.55) | 
+|     7    | win 3 game in 6 and last game | dnbinom(3,4,0.55) |
+
+dnbinom(x,y,p) measures probability of x failure before yth success given that probability of success is p.
+
+```{r}
+sum(dnbinom(0:3,4,0.55))#the total probability of winning in 4th, 5th, 6th, and 7th game.
+```
+
+Given that Pb=0.55, the Brave has a 0.608 probability of winning the World Series.
+
+### Braves win the World Series given that Pb is x
+
+Now we assume P(brave win in a game) is between 0.5 to 1.
+
+First I generate a series of Pb with gaps of 0.01, and a vector to store probability of winning World Series. Then I use loop to calculate probability with given Pb and store in vector.
+
+pnbinom(), cumulative possibilty function, is equivalent to sum(dnbinom())
+
+```{r}
+prob_th <- c(seq(0.5,1,by =0.01))
+out <- rep(NA, length(prob_th))
+for (i in (1:length(prob_th))){
+  out[i] <- pnbinom(3,4,prob_th[i])
+}
+plot(prob_th,out,type="l",xlab="P(the Braves Win A Game)", ylab ="P(the Braves Win World Series)", main = "Probabilty of the Braves Win World Series")
+```
+
+This is a figure of Pb vs P(the Braves Win World Series). There is a positive relationship between pb and the Braves win the World Series. When Pb increases, the probability that the brave win World Series increases.
+
+### In best-of-X series, what is the shortest series length so that P(Braves win World Series|PB=.55)≥0.8
+
+Now we can change the total game to be any number. Out of N games, the team needs to win (N+1)/2 games. So I add a loop on game number from 1 to 999. It keeps track of the game number until P(Braves win World Series|PB=.55) is greater than 0.8.
+
+```{r}
+b_win <-0.55
+game_seq <- seq(1, 999, 2)
+for (i in 1:length(game_seq)){
+  p_win <- pnbinom((game_seq[i]-1)/2,(game_seq[i]+1)/2, b_win)
+  if (p_win>=0.8){
+    shortest <- game_seq[i]
+    p_shortest <- p_win
+    break
+  }
+}
+shortest
+p_shortest
+  
+
+```
+
+When Pb = 0.55, the shortest series length is 71 when P(Braves win World Series|PB=.55) is 0.802.
+
+### What is the shortest series length so that P(Braves win World Series|PB = x) ≥ 0.8? This will be a figure (see below) with PB on the x-axis and series length is the y-axis.
+
+In this code, a sequence for Pb from 0.5 to 1 and a sequence for games from 1 to 9999 are used. In this way, we can calculate P(brave win the World) with changing Pb and game number with loops.
+
+```{r}
+prob_seq <- seq(0.51,1,0.01)
+out <- rep(NA, length(prob_seq))
+game_seq <- seq(1, 9999, 2)
+for (k in 1:length(prob_seq)){
+  for (i in 1:length(game_seq)){
+    p_win <- pnbinom((game_seq[i]-1)/2,(game_seq[i]+1)/2, prob_seq[k])
+    if (p_win>=0.8){
+     shortest <- game_seq[i]
+     break
+    }
+  }
+  out[k] <- shortest
+}
+
+plot(prob_seq, out, type="l",xlab="P(the Braves Win A Game)", ylab ="Shortest Series Length", main = "Shortest Series when P(Braves win Series|PB = x) ≥ 0.8")
+```
+
+There is a negative relationship between Pb and shortest series length. As Pb increase, the shortest series length decreases. 
+
+### Calculate P(PB = 0.55|Braves win World Series in 7 games) under the assumption that either PB = 0.55 or PB = 0.45. Explain your solution.
+
+| Situation | Probability | 
+|:---------:|:-----------:|
+|  Pb=0.55  |     0.5     | 
+|  Pb=0.45  |     0.5     | 
+
+Bayes rule should be used here. 
+$$P(A|B) = P(B|A)*P(A)/P(B)$$
+$$ P(Pb=0.55|Braves Win World Series) = P(Braves win world serie|Pb=0.55)*P(Pb=0.55)/(P(Braves win world games|Pb =0.55)*0.5 +(P(Braves win world games|Pb =0.45)*0.5 $$
+
+```{r}
+(dnbinom(3,4,0.55)*0.5) /(dnbinom(3,4,0.55)*0.5 + dnbinom(3,4,0.45)*0.5)
+```
+
+The P(Pb =0.55|Braves winworld series) is 0.55.
