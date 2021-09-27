@@ -16,10 +16,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction
-Monte Carlo simulations are used to obtain probability of an uncertain events. Typically, the simulation will be repeated to  get approximate results. Each simulation will have variability called error. We will explore the relationship of repetitions and simulation error
+
+Monte Carlo simulations are used to obtain probability of an uncertain events. Typically, the simulation will be repeated to  get approximate results. Each simulation will have variability called error. We will explore the relationship of repetitions and simulation error. 
 
 ## Background
-The true probability is p, the estimated probability we get from simulation is p hat. Absolute error is the absolute value of the difference between p and p hat. Relative error is absolute error divided by p.
+
+'Monte Carlo Error' is the standard deviation of the Monte Carlo estimator. It is uncertainty or variability between simulations. Its magnitudes depends on the setting of the experiment  and the number of replicates.
+
+The true probability is p, the estimated probability we get from simulation is p hat. There are two types of error. The actual amount of error between the actual value and the calculated value during a measurement is referred to 'absolute error'. The ratio of the absolute error to the actual measurement is called the 'relative error'.
+
+$$ Absolute Error=Actual value-Measured Value = p - p hat $$
+$$ Relative value =Absolute Error/Actual value = (p-phat)/p $$
+
 # Methods
 
 ```{r} 
