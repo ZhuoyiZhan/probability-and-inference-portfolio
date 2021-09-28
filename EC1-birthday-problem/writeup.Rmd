@@ -1,0 +1,121 @@
+---
+title: "writeup  "
+author: ' Zhuoyi Zhan'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In a class of N individuals, what is the probability that at least two students will share a birthday?
+
+## Introduction
+
+This birthday problem is about the probability that, in a group of N people, some of them having the same birthday. In this blog, we will generate this probability for class sizes from 1 to 80 with both simulation and analytics tools. Leap day is ignored.
+
+## Simulation Tool
+
+We use function to simulate class of 1 to 80 and each student's birthday. First, a sequence is created for different class sizes, then assume that birthdays can fall on any day. Sample(replace= True) function draw birthdays from 365 days with the according class size.
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+out <- rep(NA, 80)
+class_size <- seq(1,80, by=1)
+for (i in 1:length(class_size)){
+  generate_class <- function(class_size){
+    birthdays <- sample(1:365, class_size, replace = TRUE, prob = c(rep(1,365)))
+    data.frame(student_id = 1:class_size, birthday = birthdays)
+  }
+
+check_birthday <- function(class){
+  class_summary <- class %>% 
+    summarize(n = n(), n_bday = n_distinct(birthday)) %>% 
+    mutate(shared = n > n_bday)
+  class_summary[["shared"]]
+}
+
+replicates <- replicate(100, i %>% generate_class %>% check_birthday)
+out[i] <- mean(replicates)
+}
+```
+
+For birthdays in a class, check_birthday function is created to count how many birthday there are. And n_distinct(birthday) will count birthday if not repeated. When n is larger than distinct birthday, it means some students share birthday.
+
+The simulation is repeated for 100 times and the mean of probability of having shared birthday is recorded.
+
+```{r}
+plot1 <- plot(class_size, out, type ="l",xlab="size of group", ylab="Probability of at least one share birthday",cex.axis=0.6,cex.lab=0.75)
+```
+This is the figure using simulation tools. We can observe that when class size is bigger than 30, the probability of students having shared birthday is more than 50%. As class sizes increase, the P(shared birthday) increase.
+
+
+## Analytics Tools
+
+The probability of two people not having the same birthday is 364/365. For a classroom of size n there are (n choose 2) pairs of people.
+
+$$ P(no shared birthday) = (364/365)^(n choose 2)$$
+$$P(shared birthday) = 1- P(no shared birthday) = (364/365)^(n choose 2)$$
+
+For class size from 1 to 80, the probability of having shared birthday is calculated from the above equations
+
+```{r}
+out2 <-rep(NA,80)
+class_size2<- seq(1,80, by=1)
+for (i in 1:length(class_size2)){
+  diff =(364/365)^(i*(i-1)/2)
+  same =1-diff
+  out2[i] <- same
+}
+```
+
+```{r}
+plot(class_size2,out2,type="l", xlab="size of group", ylab="Probability of at least one share birthday",cex.axis=0.6,cex.lab=0.75)
+```
+
+From this figure, we cansee that as size of class increase, the probability of at least one share birthday increases.
+
+
+## Now combined the two figures.
+
+```{r}
+plot2 <-plot(class_size, out, type ="l", col="red",xlab="size of group", ylab="Probability of at least one share birthday",cex.axis=0.6,cex.lab=0.75)
+lines(class_size2, out2,type="l", col="steelblue")
+legend(1, 1, legend=c("Simulation solution", "Anaytics Solution"),
+       col=c("red", "steelblue"), lty=1:2, cex=0.5, text.font=0.5)
+```
+
+
+```{r}
+out2 <-rep(NA,80)
+class_size2<- seq(1,80, by=1)
+for (i in 1:length(class_size2)){
+  diff =(364/365)^(i*(i-1)/2)
+  same =1-diff
+  
+  if (same > 0.5){
+    p_stop <- same
+    length_stop <- class_size2[i]
+    break
+  }
+}
+p_stop
+length_stop
+```
+
+In this code, we calculate that when class size is greater or equal to 23, the probability of at least one share birthday is greater than 50%.
+
+## Pro and cons of simulation: 
+we assume that birthday are uniformly distributed throughout the year but holidays as well as weekends affect birthday to be uneven distribution.The simulation is simple to solve the question but the result is not as exact as analytics because we are taking means to approximate the probability.
+
+## Pros and cons of analytic: 
+It also has the downside of measuring on uneven distribution. However, using expression to calculate probability is straightforward but it is difficult to calculate large factorial without computer. And it is harder to calculate the probability that more than two peole share the same birthday.
