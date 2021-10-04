@@ -1,0 +1,292 @@
+---
+title: "Homw Field Advantage"
+author: ' Zhuoyi Zhan'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(DiagrammeR)
+require(DiagrammeRsvg)
+require(knitr)
+require(htmltools)
+```
+## Introduction
+
+The World Series winner is decided by best of 7 head to head match-up which means the first team to 4 pints wins.When the Yankees and the Braves are competing in World Series, they will either play at New York City or Atlantic, their repective home fields. In this post, we will explore if the game location give a team edge against the other. Suppose the game will be played in sequence of {NYC, NYC, ATL, ATL, ATL, NYC, NYC}.
+
+## Background
+
+Assume the probability that the Braves win a game without an advantage is pb, when it has a home field advantage in Atlantic, the probability of pb increased by 10% which is pb * 1.1. So when it plays at New York City, the Yankees has a home field advantage which is (1-pb) * 1.1, which leaves the Braves a 1-(1-pb) * 1.1 chance of winning.
+
+| Location | Pb(no adv) | Pb(with advantage) |
+|:--------:|:----------:|:------------------:|
+|    ATL   |      Pb    |      Pbh=Pb*1.1    |  
+|    NYC   |      Pb    |   Pba=1-(1-Pb)*1.1 |  
+
+
+## Calculate the probability with and without home field advantage when PB = 0.55. What is the difference in probabilities?
+
+To solve this analytically, I import a table contains all possible world series outcomes. In this code, a new column is created to store the possibility of the Braves win for each outcome. The for each outcome, code will calculate the probability based on which field it is in and win or lose in a match.
+
+```{r}
+require(dplyr)
+require(data.table)
+# Get all possible outcomes
+apo <- fread("./all-possible-world-series-outcomes.csv")
+
+# Home field indicator
+hfi <- c(0,0,1,1,1,0,0) 
+
+# P_B
+pb <- 0.55
+advantage_multiplier <- 1.1 # Set = 1 for no advantage
+pbh <- 0.55*advantage_multiplier
+pba <- 1 - (1 - 0.55)*advantage_multiplier #1-P(yankees wins at their home field) 
+
+# Calculate the probability of each possible outcome
+apo[, p := NA_real_] # Initialize new column in apo to store prob
+for(i in 1:nrow(apo)){
+  prob_game <- rep(1, 7)
+  for(j in 1:7){
+    p_win <- ifelse(hfi[j], pbh, pba)
+    prob_game[j] <- case_when(
+        apo[i,j,with=FALSE] == "W" ~ p_win
+      , apo[i,j,with=FALSE] == "L" ~ 1 - p_win
+      , TRUE ~ 1
+    )
+  }
+  apo[i, p := prod(prob_game)] # Data.table syntax
+}
+
+# Sanity check: does sum(p) == 1?
+apo[, sum(p)] # This is data.table notation
+
+# Probability of overall World Series outcomes
+apo[, sum(p), overall_outcome]
+
+```
+```{r}
+win_ad <- apo[overall_outcome=="W"]
+pro_ad <- sum(win_ad[,p])
+pro_ad
+```
+To calculate the overall probability of winning in world series, we sum up all the probability of wins. The Braves has a 0.604 probability of winning the world series when Pb = 0.55 and home field advantage = 10%.
+
+Now calculate for no home field advantage:
+
+```{r}
+require(dplyr)
+require(data.table)
+# Get all possible outcomes
+apo <- fread("./all-possible-world-series-outcomes.csv")
+
+# Home field indicator
+hfi <- c(0,0,1,1,1,0,0) #{ATL, ATL, NYC, NYC, NYC, ATL, ATL}
+
+# P_B
+pb <- 0.55
+advantage_multiplier <- 1 # Set = 1 for no advantage
+pbh <- 0.55*advantage_multiplier
+pba <- 1 - (1 - 0.55)*advantage_multiplier #1-P(yankee wins at thier home field)
+
+# Calculate the probability of each possible outcome
+apo[, p := NA_real_] # Initialize new column in apo to store prob
+for(i in 1:nrow(apo)){
+  prob_game <- rep(1, 7)
+  for(j in 1:7){
+    p_win <- ifelse(hfi[j], pbh, pba)
+    prob_game[j] <- case_when(
+        apo[i,j,with=FALSE] == "W" ~ p_win
+      , apo[i,j,with=FALSE] == "L" ~ 1 - p_win
+      , TRUE ~ 1
+    )
+  }
+  apo[i, p := prod(prob_game)] # Data.table syntax
+}
+
+# Sanity check: does sum(p) == 1?
+apo[, sum(p)] # This is data.table notation
+
+# Probability of overall World Series outcomes
+apo[, sum(p), overall_outcome]
+
+```
+
+```{r}
+win_noad <- apo[overall_outcome=="W"]
+pro_noad <- sum(win_noad[,p])
+pro_noad
+
+```
+```{r}
+(pro_ad - pro_noad)
+```
+
+The Braves has a 0.608 probability of winning the world series when Pb = 0.55 and with no home field advantage.  
+
+The difference in probabilities is -0.0040668.
+
+
+```{r}
+pnbinom(3,4,0.55)
+```
+
+## Simulation Method
+
+For simulation way, instead of computing based on all the possible outcomes, we randomly generate result for world series and have 10000 runs and the probability of the Braves win in thees runs.
+
+```{r}
+pb <- 0.55
+advantage_multiplier <-1.1
+pbh <- 0.55*advantage_multiplier
+
+pb_series <- c(pba, pba, pbh, pbh, pbh, pba, pba)#{NYC, NYC, ATL, ATL, ATL, NYC, NYC}. 
+
+total_sim <- 10000
+out<- rep(NA, total_sim)
+
+for(i in seq_along(out)){
+  win <- 0
+  for(j in 1:7){
+    win<- win + rbinom(1,1,pb_series[1])
+    if(win==4){break}
+  }
+  win
+  out[i]<- win
+}
+simulation_ad <- mean(out ==4)
+simulation_ad
+```
+
+
+```{r}
+pb <- 0.55
+advantage_multiplier <-1
+pbh <- 0.55*advantage_multiplier
+
+pb_series <- c(pba, pba, pbh, pbh, pbh, pba, pba)#{NYC, NYC, ATL, ATL, ATL, NYC, NYC}. 
+
+total_sim <- 10000
+out<- rep(NA, total_sim)
+
+for(i in seq_along(out)){
+  win <- 0
+  for(j in 1:7){
+    win<- win + rbinom(1,1,pb_series[1])
+    if(win==4){break}
+  }
+  win
+  out[i]<- win
+}
+simulation_noad <- mean(out ==4)
+simulation_noad
+```
+
+With home field advantage, the probability that the Braves win the world series is 0.605; Without home field advantage, the probability that the Braves win the world series is 0.6075. It seems that home filed advatange makes the Braves worse off when Pb = 0.55.
+
+## What is the absolute and relative error for your simulation in the previous question?
+
+$$ Absolute Error=Actual value-Measured Value = p - p hat $$
+$$ Relative value =Absolute Error/Actual value = (p-phat)/p $$
+The true probability is p, the estimated probability we get from simulation is p hat. In this case, the p is obtained from the analytical method and p hat is from simulation method. The amount of error between the actual value and the calculated value during a measurement is referred to 'absolute error'. The ratio of the absolute error to the actual measurement is called the 'relative error'. 
+
+```{r}
+(abs_error_ad <- abs(simulation_ad - pro_ad))
+(rel_error_ad <-  abs_error_ad/pro_ad)
+```
+
+With home field advantage, the absolute error is 0.001079; the relative error is 0.0017858.
+
+```{r}
+(abs_error_noad <- abs(simulation_noad-pro_noad))
+(rel_error_noad <-abs_error_noad/pro_noad)
+```
+
+Without home field advantage, the absolute error is 0.0007877969; the relative error is 0.001295.
+
+## Does the difference in probabilities (with vs without home field advantage) depend on PB? (Generate a plot to answer this question.)
+
+For this question, we will have a changing Pb from 0.5 to 0.9 with break of 0.001. we will plot the difference in probability against the Pb.
+
+```{r}
+pb <- seq(0.5,0.9,by=0.001)
+p_home <- rep(NA, length(pb))
+p_away <- rep(NA, length(pb))
+advantage_multiplier <-1.1
+for (k in 1:length(pb)){
+  apo <- fread("./all-possible-world-series-outcomes.csv")
+  hfi <- c(0,0,1,1,1,0,0) #{ATL, ATL, NYC, NYC, NYC, ATL, ATL}
+  pbh <- pb[k]*advantage_multiplier
+  pba <- 1 - (1 - pb[k])*advantage_multiplier
+
+# Calculate the probability of each possible outcome
+apo[, p := NA_real_] # Initialize new column in apo to store prob
+for(i in 1:nrow(apo)){
+  prob_game <- rep(1, 7)
+  for(j in 1:7){
+    p_win <- ifelse(hfi[j], pbh, pba)
+    prob_game[j] <- case_when(
+        apo[i,j,with=FALSE] == "W" ~ p_win
+      , apo[i,j,with=FALSE] == "L" ~ 1 - p_win
+      , TRUE ~ 1
+    )
+  }
+  apo[i, p := prod(prob_game)] # Data.table syntax
+}
+win1 <- apo[overall_outcome=="W"]
+p_home[k] <- sum(win1[,p])
+p_away[k] <- pnbinom(3,4,pb[k])
+}
+```
+```{r}
+plot(pb, p_home-p_away, type = "l",lwd=3, ylab="Differnce in Probability", xlab="P(the Braves win a match-up", main="Differnce in Probability(with or without home field advantage")
+```
+
+It is shown that difference in probability first increases then decreases. We can see that when Pb approaches 0.6, the difference becomes positive, which means home field advantage makes the Braves better off. 
+
+## Does the difference in probabilities (with vs without home field advantage) depend on the advantage factor?
+
+```{r}
+pb <- 0.55
+adv_multiplier <- seq(1,1.8,by=0.01)
+p_home2 <- rep(NA, length(adv_multiplier))
+p_away2 <- rep(NA, length(adv_multiplier))
+for (k in 1:length(adv_multiplier)){
+  apo <- fread("./all-possible-world-series-outcomes.csv")
+  hfi <- c(0,0,1,1,1,0,0) #{ATL, ATL, NYC, NYC, NYC, ATL, ATL}
+  pbh <- pb*adv_multiplier[k]
+  pba <- 1 - (1 - pb)*adv_multiplier[k]
+
+# Calculate the probability of each possible outcome
+apo[, p := NA_real_] # Initialize new column in apo to store prob
+for(i in 1:nrow(apo)){
+  prob_game <- rep(1, 7)
+  for(j in 1:7){
+    p_win <- ifelse(hfi[j], pbh, pba)
+    prob_game[j] <- case_when(
+        apo[i,j,with=FALSE] == "W" ~ p_win
+      , apo[i,j,with=FALSE] == "L" ~ 1 - p_win
+      , TRUE ~ 1
+    )
+  }
+  apo[i, p := prod(prob_game)] # Data.table syntax
+}
+win2 <- apo[overall_outcome=="W"]
+p_home2[k] <- sum(win2[,p])
+p_away2[k] <- pnbinom(3,4,0.55)
+}
+```
+
+```{r}
+plot(adv_multiplier, p_home2-p_away2, type = "l",lwd=3,ylab="Differnce in Probability", xlab="Advantage Factor", main="Differnce in Probability(with or without home field advantage")
+```
+
+The difference in probability of with home advantage minus without advantage deceases as advantage factor increases. So the probability of the braves winning the world series decrease as advantage factor increases. The home field advantages makes the braves worse off.
