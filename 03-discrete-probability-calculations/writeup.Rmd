@@ -3,7 +3,7 @@ title: "Title of Blog Post Deliverable"
 author: ' Zhuoyi Zhan'
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
-  GitHub_document:
+  html_document:
     code_folding: hide
     toc: yes
     number_sections: yes
@@ -36,7 +36,11 @@ library(tidyverse)
 ```
 ### What is the probability that the Braves win the World Series given that PB=0.55?
 
-To win in World Series, the Braves can win in 4th, 5th, 6th, 7th game because it needs to win 3 out of the first (N-1) games and the last game.
+Bernouli trial are a series of idependent repeated trail which has two outcomes, "success" and "failure". In this case, failure is lose a match and success is win a match.
+
+A negative binomial distribution models the number of successes in a Bernouli trials before it stops with specific number of failure. dnbinom(x,y,p) is the return the value of probability density that measures probability of x failure before yth success given that probability of success is p. 
+
+To win in World Series, the team need to be the first to win 4 matches. The Braves can win in 4th, 5th, 6th, 7th game because it needs to win 3 out of the first (N-1) games and the last game. 
 
 |Game Index|             Score             |     Probability   |
 |:--------:|:-----------------------------:|:-----------------:|
@@ -45,13 +49,13 @@ To win in World Series, the Braves can win in 4th, 5th, 6th, 7th game because it
 |     6    | win 3 game in 5 and last game | dnbinom(2,4,0.55) | 
 |     7    | win 3 game in 6 and last game | dnbinom(3,4,0.55) |
 
-dnbinom(x,y,p) measures probability of x failure before yth success given that probability of success is p.
+
 
 ```{r}
 sum(dnbinom(0:3,4,0.55))#the total probability of winning in 4th, 5th, 6th, and 7th game.
 ```
 
-Given that Pb=0.55, the Brave has a 0.608 probability of winning the World Series.
+Given that Pb=0.55, the Brave has a 0.608 probability of winning the World Series. The probability is higher than winning a single match.
 
 ### Braves win the World Series given that Pb is x
 
@@ -70,7 +74,7 @@ for (i in (1:length(prob_th))){
 plot(prob_th,out,type="l",xlab="P(the Braves Win A Game)", ylab ="P(the Braves Win World Series)", main = "Probabilty of the Braves Win World Series")
 ```
 
-This is a figure of Pb vs P(the Braves Win World Series). There is a positive relationship between pb and the Braves win the World Series. When Pb increases, the probability that the brave win World Series increases.
+This is a figure of Pb vs P(the Braves Win World Series). There is a positive non-linear relationship between pb and the Braves win the World Series. When the probabilityof winnig a single match increases, the probability that the braves win the World Series increases.
 
 ### In best-of-X series, what is the shortest series length so that P(Braves win World Series|PB=.55)≥0.8
 
@@ -93,7 +97,7 @@ p_shortest
 
 ```
 
-When Pb = 0.55, the shortest series length is 71 when P(Braves win World Series|PB=.55) is 0.802.
+When Pb = 0.55, the shortest series length is 71 when P(Braves win World Series|PB=.55) is 0.802. In reality, playing 71 games is impossible and  a 80% probability in winning the world series is unreachable.
 
 ### What is the shortest series length so that P(Braves win World Series|PB = x) ≥ 0.8? This will be a figure (see below) with PB on the x-axis and series length is the y-axis.
 
@@ -117,7 +121,7 @@ for (k in 1:length(prob_seq)){
 plot(prob_seq, out, type="l",xlab="P(the Braves Win A Game)", ylab ="Shortest Series Length", main = "Shortest Series when P(Braves win Series|PB = x) ≥ 0.8")
 ```
 
-There is a negative relationship between Pb and shortest series length. As Pb increase, the shortest series length decreases. 
+There is a negative relationship between Pb and shortest series length. As Pb increase, the shortest series length decreases. When the probability of winning a game is high, the less game needs to be played
 
 ### Calculate P(PB = 0.55|Braves win World Series in 7 games) under the assumption that either PB = 0.55 or PB = 0.45. Explain your solution.
 
@@ -134,4 +138,4 @@ $$ P(Pb=0.55|Braves Win World Series) = P(Braves win world serie|Pb=0.55)*P(Pb=0
 (dnbinom(3,4,0.55)*0.5) /(dnbinom(3,4,0.55)*0.5 + dnbinom(3,4,0.45)*0.5)
 ```
 
-The P(Pb =0.55|Braves winworld series) is 0.55.
+Given the Braves win world series, the probability of winning a single match is 0.55 which is the same with probability of winning a single game without conditions.
