@@ -1,5 +1,9 @@
 ---
+<<<<<<< HEAD
 title: "writeup"
+=======
+title: "Title of Blog Post Deliverable"
+>>>>>>> 665f2db2410f743e46d142857a1a50af4b9d3631
 author: ' Zhuoyi Zhan'
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
