@@ -1,0 +1,232 @@
+---
+title: "writeup"
+author: ' Zhuoyi Zhan'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+gamma distribution is a one of the continuous probability distribution with two positive parameters, shape and scale. The skewness of the gamma distribution depends on shape parameter. The mean scales is equal to shape*scale. dgamma gives the density and qgamma gives the the quantile function.
+The medium of gamma distribution is also the interval of 50th percent. So it can be calculated by qgamma(0.5, shape, scale) 
+
+log-normal distribution is distribution of a random variable whose logarithm is distributed normally. The log-noraml distribution has a mean and standard deviation as parameters. Its mean is expoential of mean plus one half of squared standard deviation.
+
+Uniform distribution lies between the minimum and maximum bounds.  the same length on the distribution has equal probability. The mean is the middle point of min and max.
+
+A PDF is a probability density function that shows probability of a random variable within a range. A cumulative distribution function, CDF, shows the probability of a value less than or equal to x.
+
+## For each distribution below, generate a figure of the PDF and CDF. Mark the mean and median in the figure.
+
+X ∼ GAMMA(shape = 3, scale = 1)
+
+```{r}
+x <- seq(1,20)
+
+y <- dgamma(x,shape =3, scale=1)
+mean<- 3*1
+med <- qgamma(0.5,shape =3, scale=1)
+plot(x,y,main="PDF of gamma distribution",
+  xlab="x", ylab="probability")
+abline(v=c(mean,med), lty=2,col="steel blue")
+y1 <- pgamma(x,shape =3, scale=1)
+plot(x,y1,main="CDF of gamma distribution",
+  xlab="x", ylab="cumulative probability")
+abline(v=c(mean,med), lty=2,col="steel blue")
+```
+
+Analytical method is used to generate the plots. The mean is 3 and the median is 2.674. The shape of gamma distribution first increase then decrease to 0.
+
+
+X ∼ LOG NORMAL(μ =  − 1, σ = 1)
+
+```{r}
+x <- c(-10:10)
+y <- dlnorm(x,meanlog=-1, sdlog=1)
+y1 <- plnorm(x,meanlog=-1, sdlog=1)
+y_mean <- exp(-1+1^2/2)
+y_med <- qlnorm(0.5,-1,1)
+plot(x,y,type="l",main="PDF of log-normal distribution",
+  xlab="x", ylab="probability")
+abline(v=c(y_mean,y_med), lty=2,col=c("steel blue","red"))
+plot(x,y1,type="l",main="CDF of log-normal distribution",
+  xlab="x", ylab="cumulative robability")
+abline(v=c(y_mean,y_med), lty=2,col=c("steel blue","red"))
+```
+
+The mean is 0.60653 and the median is 0.3678794. The shape of log distribution increase from 0, peaks around 1 and then decrease to 0.
+
+```{r}
+x <- seq(0,12)
+y<-dunif(x, min=0, max=12)
+y2=punif(x, min=0, max=12)
+ymean <- 1/2*(0+12)
+ymed<- qunif(0.5, min=0, max=12)
+plot(x,y,type="l",main="PDF of uniform distribution",
+  xlab="x", ylab="probability")
+abline(v=c(ymean,ymed), lty=c(2,4),col=c("steel blue","red"))
+plot(x, y2,type="l",main="CDF of uniform distribution",
+  xlab="x", ylab="cumulative probability")
+abline(v=c(ymean,ymed), lty=c(2,3),col=c("steel blue","red"))
+```
+
+The mean is 6 and the median is also 6. When x is within 0 to 12, all x values has the same probrbility
+
+## For each distribution below, generate a figure of the PDF and CDF of the transformation Y = log(X) random variable. Mark the mean and median in the figure. You may use simulation or analytic methods in order find the PDF and CDF of the transformation.
+
+```{r}
+x <- seq(0,20)
+log_x <- log(x)
+y <- dgamma(log_x,shape =3, scale=1)
+mean<- log(3*1)
+med <- log(qgamma(0.5,shape =3, scale=1))
+plot(log_x,y,type = "l",main="PDF of transformed gamma distribution",
+  xlab="x", ylab="probability")
+abline(v=c(mean,med), lty=2,col="steel blue")
+y1 <- pgamma(log_x,shape =3, scale=1)
+plot(log_x,y1,type = "l",main="CDF of transformed gamma distribution",
+  xlab="x", ylab="probability")
+abline(v=c(mean,med), lty=2,col="steel blue")
+```
+The mean is 1.0986 and the median is 0.983598. 
+
+
+
+
+```{r}
+xll <- seq(0,5)
+yll <- dlnorm(xll,meanlog=-1, sdlog=1,log = T)
+y3 <- plnorm(xll,meanlog=-1, sdlog=1,log.p = T)
+y_meanll <- log(exp(-1+1^2/2))
+y_medll <- log(qlnorm(0.5,-1,1))
+plot(xll,yll,type="l",xlim=c(-2,20),main="PDF of transformed log-normal distribution",
+  xlab="x", ylab="probability")
+abline(v=c(y_meanll,y_medll), lty=2,col=c("steel blue","red"))
+plot(xll,y3,type="l",xlim=c(-2,20),main="CDF of transformed log-normal distribution",
+  xlab="x", ylab="probability")
+abline(v=c(y_meanll,y_medll), lty=2,col=c("steel blue","red"))
+```
+The mean is -.5 and the median is -1. 
+
+```{r}
+x <- seq(1,20)
+y<-punif(x, min=0, max=12,log.p = T)
+y2=dunif(x, min=0, max=12,log = T)
+ymean <- log(1/2*(0+12))
+ymed<- qunif(0.5, min=0, max=12,log.p = T)
+plot(x,y,type="l",main="CDF of transformed uniform distribution",
+  xlab="x", ylab="probability")
+abline(v=c(ymean,ymed), lty=c(2,4),col=c("steel blue","red"))
+plot(x, y2,type="l",main="PDF of transformed uniform distribution",
+  xlab="x", ylab="probability")
+abline(v=c(ymean,ymed), lty=c(2,3),col=c("steel blue","red"))
+```
+The mean is 1.791759.
+
+
+
+```{r}
+out_gmean <- rep(NA, 1000)
+out_amean <- rep(NA, 1000)
+
+shape=3
+scale=1
+for (i in 1:1000){
+  rec <- rgamma(0:100, shape=3, scale=1)
+  out_gmean[i] <- exp(mean(log(rec)))
+  out_amean[i] <- mean(rec)
+}
+
+plot(out_amean,out_gmean,main="Geometric mean vs arithmetic mean for gamma distribution")
+hist(out_amean-out_gmean, main="difference in mean for gamma distribution")
+```
+
+the arit
+
+```{r}
+out_gmean <- rep(NA, 1000)
+out_amean <- rep(NA, 1000)
+for (i in 1:1000){
+  rec<- rlnorm(0:100, meanlog = -1,sdlog = 1)
+  out_gmean[i] <- exp(mean(log(rec)))
+  out_amean[i] <- mean(rec)
+}
+plot(out_amean,out_gmean,main="Geometric mean vs arithmetic mean for log-normal distribution")
+hist(out_amean-out_gmean,main="difference in mean for log-normal distribution")
+
+
+```
+
+
+
+```{r}
+out_gmean <- rep(NA, 1000)
+out_amean <- rep(NA, 1000)
+
+min=0
+max=12
+for (i in 1:1000){
+  rec<-runif(x,min, max)
+  out_gmean[i]<- exp(mean(log(rec)))
+  out_amean[i]<- mean(rec)
+}
+plot(out_amean,out_gmean,main="Geometric mean vs arithmetic mean for uniform distribution")
+hist(out_amean-out_gmean,main="difference in mean for uniform distribution")
+```
+
+## What is the correct relationship between E[log (X)] and log (E[X])? Is one always larger? Equal? Explain your answer.
+```{r}
+e_log <- rep(NA, 1000)
+log_e <- rep(NA, 1000)
+
+shape=3
+scale=1
+for (i in 1:1000){
+  z <- rgamma(0:100, shape=3, scale=1)
+  log_z <- log(z)
+  e_log[i] <- mean(log_z)
+  log_e[i] <- log(mean(z))
+}
+hist(e_log-log_e,main="difference for gamma distribution")
+```
+E[log (X)] is always smaller than log (E[X]) since it is a neagative differnce.
+
+```{r}
+e_log <- rep(NA, 1000)
+log_e <- rep(NA, 1000)
+
+for (i in 1:1000){
+  z <- rlnorm(0:100, meanlog = -1,sdlog = 1)
+  log_z <- log(z)
+  e_log[i] <- mean(log_z)
+  log_e[i] <- log(mean(z))
+}
+hist(e_log-log_e,main="difference for log-normal distribution")
+```
+
+E[log (X)] is always smaller than log (E[X]) because the E[log (X)] - log (E[X]) is neagtive
+
+```{r}
+e_log <- rep(NA, 1000)
+log_e <- rep(NA, 1000)
+
+for (i in 1:1000){
+  z <- runif(0:100, min=0,max=12)
+  log_z <- log(z)
+  e_log[i] <- mean(log_z)
+  log_e[i] <- log(mean(z))
+}
+hist(e_log-log_e,main="difference for unifrom distribution")
+```
+E[log (X)] is always smaller than log (E[X]) because the E[log (X)] - log (E[X]) is neagtive.
+
