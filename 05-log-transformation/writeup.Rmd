@@ -31,18 +31,23 @@ A PDF is a probability density function that shows probability of a random varia
 X ∼ GAMMA(shape = 3, scale = 1)
 
 ```{r}
-x <- seq(1,20)
+x <- seq(-1,10,by=0.01)
 
-y <- dgamma(x,shape =3, scale=1)
+pdfg <- dgamma(x,shape =3, scale=1)
+cdfg <- pgamma(x,shape =3, scale=1)
+
 mean<- 3*1
 med <- qgamma(0.5,shape =3, scale=1)
-plot(x,y,main="PDF of gamma distribution",
-  xlab="x", ylab="probability")
-abline(v=c(mean,med), lty=2,col="steel blue")
-y1 <- pgamma(x,shape =3, scale=1)
-plot(x,y1,main="CDF of gamma distribution",
-  xlab="x", ylab="cumulative probability")
-abline(v=c(mean,med), lty=2,col="steel blue")
+
+plot(x,pdfg,main="PDF of gamma distribution",
+  xlab="x", ylab="probability",type = "l")
+abline(v=c(mean,med), lty=2,col=c("red","steel blue"))
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(2,2))
+
+plot(x,cdfg,main="CDF of gamma distribution",
+  xlab="x", ylab="cumulative probability",type="l")
+abline(v=c(mean,med), lty=2,col=c("red","steel blue"))
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(2,2))
 ```
 
 Analytical method is used to generate the plots. The mean is 3 and the median is 2.674. The shape of gamma distribution first increase then decrease to 0.
@@ -56,12 +61,16 @@ y <- dlnorm(x,meanlog=-1, sdlog=1)
 y1 <- plnorm(x,meanlog=-1, sdlog=1)
 y_mean <- exp(-1+1^2/2)
 y_med <- qlnorm(0.5,-1,1)
+
 plot(x,y,type="l",main="PDF of log-normal distribution",
   xlab="x", ylab="probability")
-abline(v=c(y_mean,y_med), lty=2,col=c("steel blue","red"))
+abline(v=c(y_mean,y_med), lty=2,col=c("red","steel blue"))
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(2,2))
+
 plot(x,y1,type="l",main="CDF of log-normal distribution",
   xlab="x", ylab="cumulative robability")
-abline(v=c(y_mean,y_med), lty=2,col=c("steel blue","red"))
+abline(v=c(y_mean,y_med), lty=2,col=c("red","steel blue"))
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(2,2))
 ```
 
 The mean is 0.60653 and the median is 0.3678794. The shape of log distribution increase from 0, peaks around 1 and then decrease to 0.
@@ -74,10 +83,13 @@ ymean <- 1/2*(0+12)
 ymed<- qunif(0.5, min=0, max=12)
 plot(x,y,type="l",main="PDF of uniform distribution",
   xlab="x", ylab="probability")
-abline(v=c(ymean,ymed), lty=c(2,4),col=c("steel blue","red"))
+abline(v=c(ymean,ymed), lty=c(2,4),col=c("red","steel blue"))
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(2,2))
+
 plot(x, y2,type="l",main="CDF of uniform distribution",
   xlab="x", ylab="cumulative probability")
-abline(v=c(ymean,ymed), lty=c(2,3),col=c("steel blue","red"))
+abline(v=c(ymean,ymed), lty=c(2,3),col=c("red","steel blue"))
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(2,2))
 ```
 
 The mean is 6 and the median is also 6. When x is within 0 to 12, all x values has the same probrbility
@@ -85,53 +97,62 @@ The mean is 6 and the median is also 6. When x is within 0 to 12, all x values h
 ## For each distribution below, generate a figure of the PDF and CDF of the transformation Y = log(X) random variable. Mark the mean and median in the figure. You may use simulation or analytic methods in order find the PDF and CDF of the transformation.
 
 ```{r}
-x <- seq(0,20)
-log_x <- log(x)
-y <- dgamma(log_x,shape =3, scale=1)
-mean<- log(3*1)
-med <- log(qgamma(0.5,shape =3, scale=1))
-plot(log_x,y,type = "l",main="PDF of transformed gamma distribution",
-  xlab="x", ylab="probability")
-abline(v=c(mean,med), lty=2,col="steel blue")
-y1 <- pgamma(log_x,shape =3, scale=1)
-plot(log_x,y1,type = "l",main="CDF of transformed gamma distribution",
-  xlab="x", ylab="probability")
-abline(v=c(mean,med), lty=2,col="steel blue")
+x <- rgamma(1000,shape=3,scale=1)
+#log transformation
+Y <- log(x)
+plot(density(Y), type="l", main="Gamma Distribution's log transformation PDF")
+abline(v=mean(Y),col="red")
+abline(v=median(Y),col="steelblue")
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(1,1))
+
+#plot CDF for Gamma distribution log transformation
+plot(ecdf(Y),main="Gamma Distribution's log transformation CDF")
+abline(v=mean(Y),col="red")
+abline(v=median(Y),col="steelblue")
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(1,1))
+
 ```
-The mean is 1.0986 and the median is 0.983598. 
 
-
-
+Gamma Distribution's log transformation
+The mean is 0.8865 and the median is 0.9475652. 
 
 ```{r}
-xll <- seq(0,5)
-yll <- dlnorm(xll,meanlog=-1, sdlog=1,log = T)
-y3 <- plnorm(xll,meanlog=-1, sdlog=1,log.p = T)
-y_meanll <- log(exp(-1+1^2/2))
-y_medll <- log(qlnorm(0.5,-1,1))
-plot(xll,yll,type="l",xlim=c(-2,20),main="PDF of transformed log-normal distribution",
-  xlab="x", ylab="probability")
-abline(v=c(y_meanll,y_medll), lty=2,col=c("steel blue","red"))
-plot(xll,y3,type="l",xlim=c(-2,20),main="CDF of transformed log-normal distribution",
-  xlab="x", ylab="probability")
-abline(v=c(y_meanll,y_medll), lty=2,col=c("steel blue","red"))
+x <- rlnorm(1000, meanlog=-1, sdlog=1)
+Y <- log(x)
+#plot PDF for Log normal distribution
+plot(density(Y), type="l", main="Log Normal Distribution's log transformation PDF")
+abline(v=mean(Y),col="red")
+abline(v=median(Y),col="steelblue")
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(1,1))
+
+#plot CDF for log normal distribution log transformation
+plot(ecdf(Y),main="Log Normal Distribution's log transformation CDF")
+abline(v=mean(Y),col="red")
+abline(v=median(Y),col="steelblue")
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(1,1))
 ```
-The mean is -.5 and the median is -1. 
+
+Log Normal Distribution's log transformation
+The mean is -1.02 and the median is -1.01. 
 
 ```{r}
-x <- seq(1,20)
-y<-punif(x, min=0, max=12,log.p = T)
-y2=dunif(x, min=0, max=12,log = T)
-ymean <- log(1/2*(0+12))
-ymed<- qunif(0.5, min=0, max=12,log.p = T)
-plot(x,y,type="l",main="CDF of transformed uniform distribution",
-  xlab="x", ylab="probability")
-abline(v=c(ymean,ymed), lty=c(2,4),col=c("steel blue","red"))
-plot(x, y2,type="l",main="PDF of transformed uniform distribution",
-  xlab="x", ylab="probability")
-abline(v=c(ymean,ymed), lty=c(2,3),col=c("steel blue","red"))
+x <- runif(1000, min=0, max=12)
+Y <- log(x)
+#plot PDF for uniform distribution
+plot(density(Y), type="l", main="Uniform Distribution's log transformation PDF")
+abline(v=mean(Y),col="red")
+abline(v=median(Y),col="steelblue")
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(1,1))
+
+#plot CDF for uniform distribution log transformation
+plot(ecdf(Y),main="Uniform Distribution's log transformation CDF")
+abline(v=mean(Y),col="red")
+abline(v=median(Y),col="steelblue")
+legend("topright", c("mean","median"), col=c("red", "steelblue"), lty=c(1,1))
 ```
-The mean is 1.791759.
+
+Uniform Distribution's log transformation:
+The mean is 1.528, the median is 1.8356.
 
 
 
@@ -148,10 +169,11 @@ for (i in 1:1000){
 }
 
 plot(out_amean,out_gmean,main="Geometric mean vs arithmetic mean for gamma distribution")
+abline(a=0,b=1)
 hist(out_amean-out_gmean, main="difference in mean for gamma distribution")
 ```
 
-the arit
+
 
 ```{r}
 out_gmean <- rep(NA, 1000)
@@ -162,6 +184,7 @@ for (i in 1:1000){
   out_amean[i] <- mean(rec)
 }
 plot(out_amean,out_gmean,main="Geometric mean vs arithmetic mean for log-normal distribution")
+abline(a=0,b=1)
 hist(out_amean-out_gmean,main="difference in mean for log-normal distribution")
 
 
@@ -181,6 +204,7 @@ for (i in 1:1000){
   out_amean[i]<- mean(rec)
 }
 plot(out_amean,out_gmean,main="Geometric mean vs arithmetic mean for uniform distribution")
+abline(a=0,b=1)
 hist(out_amean-out_gmean,main="difference in mean for uniform distribution")
 ```
 
