@@ -1,0 +1,478 @@
+---
+title: "mle-mm"
+author: ' Zhuoyi Zhan'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+# Introduction
+Method of moment: its estimators are by equating the first k sample moments to the k population moments. For a distribution, replace distribution's mean, variance with sample mean, variance that solve for parameter og the observed moments.
+MLE Estimate the unknown parameter that maximizes the log likelihood. It is the parameter ponts that the observed sample is most likely.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(dplyr)
+Hmisc::getHdata(nhgh)
+d1 <- nhgh %>% 
+  filter(sex == "female") %>% 
+  filter(age >= 18) %>% 
+  select(gh, ht) %>% 
+  filter(1:n()<=1000)
+```
+
+How you calculated estimates of MM parameters: first a parametric distribution (normal, gamma, weibull), then identify the distribution parameters.
+Normal has mean and meidan, Gamma distribution has shape and scale.
+
+Gamma distribution:
+**E[X]=shape∗scale**
+**V[X]=shape∗scale^2**
+
+
+Then use p function to find estimated cdf. CDF shows the probability of a value less than or equal to x. Use d function to  find PDF, probability density function, that shows probability of a random variable within a range
+
+```{r}
+par(mfrow = c(1,3))
+hist(d1$gh, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+#parameters
+(xbar <- mean(d1$gh))
+(s2 <- var(d1$gh))
+
+#estimated pdf
+curve(dnorm(x, mean=xbar, sd = s2),0,14,add=TRUE, lwd=3, col="steelblue")
+#curve(dgamma(x, shape=shape_hat, scale=scale_hat),0,14,add =T,lwd=3, col="purple")
+#norm_median
+(norm_median <- qnorm(0.5, mean=xbar, sd = s2))
+abline(v=norm_median,col="steelblue",lwd=2)
+
+#ecdf, estimated cdf
+plot(ecdf(d1$gh),main="ecdf and estimated cdf of normal")
+curve(pnorm(x, mean=xbar, sd=s2),add=TRUE, lwd=3, col="steelblue")
+
+#QQplot
+sq <- seq(0.05,0.95,by=0.05)
+#empirical
+qt <- quantile(d1$gh, sq)
+#theoretical
+qn <- qnorm(sq, mean=xbar, sd=s2)
+plot(qn,qt, main="QQ-plot of normal",xlab="theoretical", ylab="empirical")
+# y=x line
+abline(0,1)
+```
+
+
+```{r}
+par(mfrow = c(1,3))
+hist(d1$gh, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+#parameters
+(shape_hat <- xbar^2/s2)
+(scale_hat <- s2/xbar)
+#est pdf
+curve(dgamma(x, shape=shape_hat, scale=scale_hat),0,14,add =T,lwd=3, col="purple")
+
+#meidan
+abline(v=qgamma(0.5, shape=shape_hat, scale=scale_hat),col="purple",lwd=2)
+(qgamma(0.5, shape=shape_hat, scale=scale_hat))
+
+#ecdf
+plot(ecdf(d1$gh),main="ecdf and estimated cdf of gamma")
+#est ecdf
+curve(pgamma(x, shape=shape_hat,scale=scale_hat),0,14,add =T,lwd=3, col="purple")
+
+#QQ-plot
+sq <- seq(0.05,0.95,by=0.05)
+qt <- quantile(d1$gh, sq)
+qga <- qgamma(sq, shape=shape_hat,scale=scale_hat)
+
+plot(qga,qt, main="QQ-plot of gamma",xlab="theoretical", ylab="empirical")
+abline(0,1)
+```
+
+```{r}
+par(mfrow = c(1,3))
+#parameters
+var.weib <- function(k,m_hat, var_hat){
+  mean_w2<- (m_hat/gamma(1+1/k))^2
+  var_w <- (gamma(1+2/k)-(gamma(1+1/k))^2)
+  out <- mean_w2 * var_w - var_hat
+  return(out)
+}
+
+x=seq(10,40, by=0.1)
+mm.opt <- optimize(f=function(x){
+  abs(var.weib(k=x, m_hat=mean(d1$gh),var_hat=var(d1$gh)))
+}, lower=10, upper=100)
+mm.weib.k <- mm.opt$minimum
+mm.weib.lambda=(xbar/gamma(1+1/mm.weib.k))
+
+(shape = mm.weib.k)
+(scale= mm.weib.lambda)
+
+#est pdf
+hist(d1$gh, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+curve(dweibull(x,shape=shape, scale=scale),0,14, add=T, lwd=3, col="red")
+#meidan
+abline(v=qweibull(0.5, shape=shape, scale=scale),col="red",lwd=2)
+(qweibull(0.5, shape=shape, scale=scale))
+
+#ecdf
+plot(ecdf(d1$gh),main="ecdf and estimated cdf of Weibill")
+#est ecdf
+curve(pweibull(x, shape=shape,scale=scale),0,14,add =T,lwd=3, col="red")
+
+#QQ-plot
+sq <- seq(0.05,0.95,by=0.05)
+qt <- quantile(d1$gh, sq)
+qga <- qweibull(sq, shape=shape,scale=scale)
+
+plot(qga,qt, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
+abline(0,1)
+```
+
+# MLE parameters
+
+When you want otMLE parameters, you first construct the log-likelihood function and use optimization to find calues that maximize the function
+
+```{r}
+require(stats4)
+nLL <- function(mean, sd){
+  fs <- dnorm(
+        x = d1$gh
+      , mean = mean
+      , sd = sd
+      , log = TRUE
+    ) 
+  -sum(fs)
+}
+fit <- mle(
+    nLL
+  , start = list(mean = 1, sd = 1)
+  , method = "L-BFGS-B"
+  , lower = c(0, 0.01)
+)
+
+```
+
+```{r}
+par(mfrow = c(1,3))
+plot(ecdf(d1$gh), main = "ecdf and est cdf of normal")
+curve(
+    pnorm(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+hist(d1$gh, freq = FALSE, main = "")
+curve(
+    dnorm(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+median_norm <- qnorm(0.5, mean=coef(fit)[1], sd=coef(fit)[2])
+abline(v=median_norm, col="blue",lwd=3)
+
+U <- runif(1000)
+Y <- qnorm(U)
+qqnorm(Y)
+abline(0,1)
+```
+
+```{r}
+lm(d1$gh ~ 1) %>% summary
+```
+
+
+
+
+
+```{r}
+par(mfrow = c(1,3))
+(shape_h <- coef(fit)[1]^2/coef(fit)[2])
+(scale_h <- coef(fit)[2]/coef(fit)[1])
+
+plot(ecdf(d1$gh), main = "")
+curve(
+    pgamma(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+hist(d1$gh, freq = FALSE, main = "")
+curve(
+    dgamma(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+abline(v=qgamma(0.5, shape=shape_h, scale=scale_h),col="purple",lwd=2)
+(qgamma(0.5, shape=shape_h, scale=scale_h))
+
+
+U <- runif(1000)
+Y <- qgamma(U, shape = shape_h, scale = scale_h)
+ps <- ppoints(1000)
+theoretical <- qgamma(ps, shape = shape_h, scale = scale_h)
+sample <- quantile(Y, ps)
+plot(theoretical, sample)
+abline(0,1)
+```
+
+```{r}
+
+par(mfrow = c(1,3))
+plot(ecdf(d1$gh), main = "")
+curve(
+    pweibull(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+hist(d1$gh, freq = FALSE, main = "")
+curve(
+    dweibull(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+
+U <- runif(1000)
+Y <- qweibull(U, shape = shape_hat, scale = scale_hat)
+ps <- ppoints(1000)
+theoretical <- qweibull(ps, shape = shape_hat, scale = scale_hat)
+sample <- quantile(Y, ps)
+plot(theoretical, sample)
+abline(0,1)
+```
+
+
+Height:
+
+```{r}
+par(mfrow = c(1,3))
+hist(d1$ht, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+#parameters
+(xbar <- mean(d1$ht))
+(s2 <- var(d1$ht))
+
+#estimated pdf
+curve(dnorm(x, mean=xbar, sd = s2),0,14,add=TRUE, lwd=3, col="steelblue")
+#curve(dgamma(x, shape=shape_hat, scale=scale_hat),0,14,add =T,lwd=3, col="purple")
+#norm_median
+(norm_median <- qnorm(0.5, mean=xbar, sd = s2))
+abline(v=norm_median,col="steelblue",lwd=2)
+
+#ecdf, estimated cdf
+plot(ecdf(d1$ht),main="ecdf and estimated cdf of normal")
+curve(pnorm(x, mean=xbar, sd=s2),add=TRUE, lwd=3, col="steelblue")
+
+#QQplot
+sq <- seq(0.05,0.95,by=0.05)
+#empirical
+qt <- quantile(d1$ht, sq)
+#theoretical
+qn <- qnorm(sq, mean=xbar, sd=s2)
+plot(qn,qt, main="QQ-plot of normal",xlab="theoretical", ylab="empirical")
+# y=x line
+abline(0,1)
+```
+
+
+```{r}
+par(mfrow = c(1,3))
+hist(d1$ht, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+#parameters
+(shape_hat <- xbar^2/s2)
+(scale_hat <- s2/xbar)
+#est pdf
+curve(dgamma(x, shape=shape_hat, scale=scale_hat),0,14,add =T,lwd=3, col="purple")
+
+#meidan
+abline(v=qgamma(0.5, shape=shape_hat, scale=scale_hat),col="purple",lwd=2)
+(qgamma(0.5, shape=shape_hat, scale=scale_hat))
+
+#ecdf
+plot(ecdf(d1$ht),main="ecdf and estimated cdf of gamma")
+#est ecdf
+curve(pgamma(x, shape=shape_hat,scale=scale_hat),add=TRUE,lwd=3, col="purple")
+
+#QQ-plot
+sq <- seq(0.05,0.95,by=0.05)
+qt <- quantile(d1$ht, sq)
+qga <- qgamma(sq, shape=shape_hat,scale=scale_hat)
+
+plot(qga,qt, main="QQ-plot of gamma",xlab="theoretical", ylab="empirical")
+abline(0,1)
+```
+
+```{r}
+par(mfrow = c(1,3))
+#parameters
+var.weib <- function(k,m_hat, var_hat){
+  mean_w2<- (m_hat/gamma(1+1/k))^2
+  var_w <- (gamma(1+2/k)-(gamma(1+1/k))^2)
+  out <- mean_w2 * var_w - var_hat
+  return(out)
+}
+
+x=seq(10,40, by=0.1)
+mm.opt <- optimize(f=function(x){
+  abs(var.weib(k=x, m_hat=mean(d1$ht),var_hat=var(d1$ht)))
+}, lower=10, upper=100)
+mm.weib.k <- mm.opt$minimum
+mm.weib.lambda=(xbar/gamma(1+1/mm.weib.k))
+
+(shape = mm.weib.k)
+(scale= mm.weib.lambda)
+
+#est pdf
+hist(d1$ht, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+curve(dweibull(x,shape=shape, scale=scale),  add=TRUE, lwd=3, col="red")
+#meidan
+abline(v=qweibull(0.5, shape=shape, scale=scale),col="red",lwd=2)
+(qweibull(0.5, shape=shape, scale=scale))
+
+#ecdf
+plot(ecdf(d1$ht),main="ecdf and estimated cdf of Weibill")
+#est ecdf
+curve(pweibull(x, shape=shape,scale=scale),0,14,add=T,lwd=3, col="red")
+
+#QQ-plot
+sq <- seq(0.05,0.95,by=0.05)
+qt <- quantile(d1$ht, sq)
+qga <- qweibull(sq, shape=shape,scale=scale)
+
+plot(qga,qt, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
+abline(0,1)
+```
+
+# MLE
+
+```{r}
+require(stats4)
+nLL <- function(mean, sd){
+  fs <- dnorm(
+        x = d1$ht
+      , mean = mean
+      , sd = sd
+      , log = TRUE
+    ) 
+  -sum(fs)
+}
+fit <- mle(
+    nLL
+  , start = list(mean = 1, sd = 1)
+  , method = "L-BFGS-B"
+  , lower = c(0, 0.01)
+)
+
+```
+
+```{r}
+par(mfrow = c(1,3))
+plot(ecdf(d1$ht), main = "ecdf and est cdf of normal")
+curve(
+    pnorm(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+hist(d1$ht, freq = FALSE, main = "")
+curve(
+    dnorm(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+median_norm <- qnorm(0.5, mean=coef(fit)[1], sd=coef(fit)[2])
+abline(v=median_norm, col="blue",lwd=3)
+
+U <- runif(1000)
+Y <- qnorm(U)
+qqnorm(Y)
+abline(0,1)
+```
+
+
+
+```{r}
+par(mfrow = c(1,3))
+(shape_h <- coef(fit)[1]^2/coef(fit)[2])
+(scale_h <- coef(fit)[2]/coef(fit)[1])
+
+plot(ecdf(d1$ht), main = "")
+curve(
+    pgamma(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+hist(d1$ht, freq = FALSE, main = "")
+curve(
+    dgamma(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+abline(v=qgamma(0.5, shape=shape_h, scale=scale_h),col="purple",lwd=2)
+(qgamma(0.5, shape=shape_h, scale=scale_h))
+
+
+U <- runif(1000)
+Y <- qgamma(U, shape = shape_h, scale = scale_h)
+ps <- ppoints(1000)
+theoretical <- qgamma(ps, shape = shape_h, scale = scale_h)
+sample <- quantile(Y, ps)
+plot(theoretical, sample)
+abline(0,1)
+```
+
+```{r}
+
+par(mfrow = c(1,3))
+plot(ecdf(d1$ht), main = "")
+curve(
+    pweibull(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+hist(d1$ht, freq = FALSE, main = "")
+curve(
+    dweibull(x, coef(fit)[1], coef(fit)[2])
+  , add = TRUE
+  , col = "blue"
+  , lwd = 3
+)
+
+U <- runif(1000)
+Y <- qweibull(U, shape = shape_hat, scale = scale_hat)
+ps <- ppoints(1000)
+theoretical <- qweibull(ps, shape = shape_hat, scale = scale_hat)
+sample <- quantile(Y, ps)
+plot(theoretical, sample)
+abline(0,1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
