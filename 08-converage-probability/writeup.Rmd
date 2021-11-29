@@ -1,0 +1,143 @@
+---
+title: "cp"
+author: ' Zhuoyi Zhan'
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+# Introduction
+
+The coverage probability is an operating characteristic of methods or algorithms that create confidence intervals.
+
+If one repeatedly draws a sample of size N from the population and constructs a confidence interval, the coverage probability is the proportion of intervals that capture the population parameter of interest.
+
+In this deliverable, the 95% confidence interval of the median is the middle 95% of sampling distribution of the median; the 95% confidence interval of the mean, standard deviation is the middle 95% of the respective sampling distribution.
+
+```{r, message=FALSE}
+library(dplyr)
+```
+
+
+## Generate a single sample from a standard normal distribution of size N = 201. Explain to the reader how you use MLE to estimate the distribution.
+
+First we create a standard normal distribution of size of 201. The MLE function will start at mean of 1 and standard deviation of 1 and until it fits the sample. Then it store the estimated mean and standard deviation in the fit function.
+
+```{r}
+N <- 201
+samplen <- rnorm(N)
+#median(samplen)
+
+#MLE
+require(stats4)
+nLL <- function(mean, sd){
+  fs <- dnorm(
+        x = samplen
+      , mean = mean
+      , sd = sd
+      , log = TRUE
+    ) 
+  -sum(fs)
+}
+fit <- mle(
+    nLL
+  , start = list(mean = 0, sd = 1)
+  , method = "L-BFGS-B"
+  , lower = c(0, 0.01)
+)
+
+
+(mean_sample <- coef(fit)[[1]])
+(sd_sample <- coef(fit)[[2]])
+```
+
+The estimated mean is 0.039, and the estimated standard deviation is 0.943.
+
+## how you approximate the sampling distribution of the median, conditional on the estimate of the distribution in the previous step.
+ 
+To generate the sampling distribution of the median, we need to use the estimated parameters for the MLE function. Now we need to generate many sampling distributions and get the distribution of all medians
+ 
+```{r}
+
+medians <- rep(NA, 5000)
+for (i in seq_along(medians)){
+  medians[i] <- rnorm(N, mean=mean_sample, sd=sd_sample) %>% median
+}
+hist(medians)
+```
+
+## Describe how you calculate a 95% confidence interval from the approximated sampling distribution.
+
+From all the medians generate from repetition, the 95% confidence interval is middle 95% of sampling distribution of the median. We can use quantile(0.025, 0.975) to get it.
+
+```{r}
+(median_q <- quantile(medians, c(0.025,0.975)))
+```
+
+The 95% confidence interval of estimated median is between -0.1273 and 0.2056.
+
+## Explain the concept of coverage probability. Explain your code for calculating the coverage probability.
+
+the coverage probability is the proportion of intervals that capture the population parameter of interest.
+
+We need to generate all the distribution to estimated mean and sd, then use the mean and sd to create new distribution to estimate median. Then capture the 95% CI and see if that captured the true median. In stardard normal distribution, the median is 0, so to capture the true median, the left-hand side of CI is less than 0, and right-hand side is greater than 0. When a sampling distribution capture the true median, we let it be 1 and when not we define it as 0. The sum will be all the time it capture the median.
+
+```{r}
+generate_data <- function(parameters){
+  data=rnorm(parameters[1],parameters[2],parameters[3])
+}
+
+est_dist <- function(data){
+  mean_hat <- mean(data)
+  sd_hat <- sd(data)
+  return(c(length(data), mean_hat,sd_hat))
+}
+
+est_ci <- function(parameters){
+  medians <- rep(NA, 5000)
+  for (i in seq_along(medians)){
+    medians[i] <- parameters %>% generate_data() %>% median 
+  }
+  quantile(medians, c(0.025, 0.975))
+}
+```
+
+```{r}
+capture_median <- function(ci){
+  1*(ci[1]<0 & ci[2]>0)
+}
+
+parameters <-c(201, 0, 1)
+
+N <- 201
+pop.mean = 0
+pop.sd = 1
+true.parameters <- c(N,mean = pop.mean, sd = pop.sd)
+replicate <- 5000
+captured <-rep(NA,replicate)
+for (i in 1:replicate){
+  captured[i] <- true.parameters %>% generate_data %>% est_dist %>% est_ci %>% capture_median
+   
+}
+
+```
+
+```{r}
+(captured_prob <- mean(captured))
+```
+
+The coverage probability is 98%. So 98% of the sampling distribution captured the true median which is more than the 95% CI.
+
+## Describe how you might change the simulation to learn more about the operating characteristics of your chosen method for constructing the 95% confidence interval.
+
+Increase the replicate number and change the MLEto the method of moment estimation to estimate the mean and standard deviation.
+
+
+
+
+
+
