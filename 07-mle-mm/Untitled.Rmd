@@ -12,8 +12,18 @@ output:
 ---
 
 # Introduction
-Method of moment: its estimators are by equating the first k sample moments to the k population moments. For a distribution, replace distribution's mean, variance with sample mean, variance that solve for parameter og the observed moments.
-MLE Estimate the unknown parameter that maximizes the log likelihood. It is the parameter ponts that the observed sample is most likely.
+
+This blog is a tutorial about how to  use MLe and MM to model teo variabless: Glycohemoglobin and height of adult females.
+
+# Background
+
+MLE and MM are two method to estimate population parameters. 
+
+Method of Moment: its involves equating the sample moments to the k population moments. First choose a distribution, then calculate distribution moments and sample moments. Thenequating distribution's mean, variance with sample mean, variance to solve for parameter of thef interest.
+
+Maximum Likelihood Estimation: Estimate the unknown parameter that maximizes the log likelihood function given some data. In this way, using the assumed statistical model, the observed sample is most likely.
+
+## MM
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -29,15 +39,24 @@ d1 <- nhgh %>%
   filter(1:n()<=1000)
 ```
 
-How you calculated estimates of MM parameters: first a parametric distribution (normal, gamma, weibull), then identify the distribution parameters.
-Normal has mean and meidan, Gamma distribution has shape and scale.
+How you calculated estimates of MM parameters: first choose a parametric distribution (normal, gamma, weibull), then identify the distribution parameters.
+Normal's mean and median, Gamma distribution has shape and scale.
 
 Gamma distribution:
 **E[X]=shape∗scale**
 **V[X]=shape∗scale^2**
 
 
-Then use p function to find estimated cdf. CDF shows the probability of a value less than or equal to x. Use d function to  find PDF, probability density function, that shows probability of a random variable within a range
+The codes has accomplished these tasks:
+Overlay estimated pdf onto histogram
+Overlay estimated CDF onto eCDF
+QQ plot(sample vs estimated dist)
+
+Use p function to find estimated cdf. CDF shows the probability of a value less than or equal to x. Use d function to  find PDF, probability density function, that shows probability of a random variable within a range. 
+
+Median is calculated by q fucntion which return the value of the intended quantile, median is the 0.5 quantile.
+
+### MM-Normal Distribution
 
 ```{r}
 par(mfrow = c(1,3))
@@ -48,7 +67,6 @@ hist(d1$gh, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
 
 #estimated pdf
 curve(dnorm(x, mean=xbar, sd = s2),0,14,add=TRUE, lwd=3, col="steelblue")
-#curve(dgamma(x, shape=shape_hat, scale=scale_hat),0,14,add =T,lwd=3, col="purple")
 #norm_median
 (norm_median <- qnorm(0.5, mean=xbar, sd = s2))
 abline(v=norm_median,col="steelblue",lwd=2)
@@ -63,11 +81,14 @@ sq <- seq(0.05,0.95,by=0.05)
 qt <- quantile(d1$gh, sq)
 #theoretical
 qn <- qnorm(sq, mean=xbar, sd=s2)
-plot(qn,qt, main="QQ-plot of normal",xlab="theoretical", ylab="empirical")
+plot(qn,qt, main="QQ-plot of normal distribution",xlab="theoretical", ylab="empirical")
 # y=x line
 abline(0,1)
 ```
+The QQplot shows that points does not perfectly fall on the y=x line. This means that estimated distribution does not match the empirical distribution.
 
+
+### MM-Gamma
 
 ```{r}
 par(mfrow = c(1,3))
@@ -89,12 +110,15 @@ curve(pgamma(x, shape=shape_hat,scale=scale_hat),0,14,add =T,lwd=3, col="purple"
 
 #QQ-plot
 sq <- seq(0.05,0.95,by=0.05)
-qt <- quantile(d1$gh, sq)
-qga <- qgamma(sq, shape=shape_hat,scale=scale_hat)
+qt_y <- quantile(d1$gh, sq)
+ga_x <- qgamma(sq, shape=shape_hat,scale=scale_hat)
 
-plot(qga,qt, main="QQ-plot of gamma",xlab="theoretical", ylab="empirical")
+plot(ga_x,qt_y, main="QQ-plot of gamma",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
+The QQplot shows that points does not perfectly fall on the y=x line. This means that estimated distribution does not match the empirical distribution.
+
+### MM-weibull
 
 ```{r}
 par(mfrow = c(1,3))
@@ -113,33 +137,39 @@ mm.opt <- optimize(f=function(x){
 mm.weib.k <- mm.opt$minimum
 mm.weib.lambda=(xbar/gamma(1+1/mm.weib.k))
 
-(shape = mm.weib.k)
-(scale= mm.weib.lambda)
+(shape_weib = mm.weib.k)
+(scale_weib= mm.weib.lambda)
 
 #est pdf
 hist(d1$gh, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
-curve(dweibull(x,shape=shape, scale=scale),0,14, add=T, lwd=3, col="red")
+curve(dweibull(x,shape=shape_weib, scale=scale_weib),0,14, add=T, lwd=3, col="red")
 #meidan
-abline(v=qweibull(0.5, shape=shape, scale=scale),col="red",lwd=2)
-(qweibull(0.5, shape=shape, scale=scale))
+abline(v=qweibull(0.5, shape=shape_weib, scale=scale_weib),col="red",lwd=2)
+(qweibull(0.5, shape=shape_weib, scale=scale_weib))
 
 #ecdf
 plot(ecdf(d1$gh),main="ecdf and estimated cdf of Weibill")
 #est ecdf
-curve(pweibull(x, shape=shape,scale=scale),0,14,add =T,lwd=3, col="red")
+curve(pweibull(x, shape=shape_weib,scale=scale_weib),0,14,add =T,lwd=3, col="red")
 
 #QQ-plot
 sq <- seq(0.05,0.95,by=0.05)
-qt <- quantile(d1$gh, sq)
-qga <- qweibull(sq, shape=shape,scale=scale)
+y_w <- quantile(d1$gh, sq)
+x_w <- qweibull(sq, shape=shape_weib,scale=scale_weib)
 
-plot(qga,qt, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
+plot(x_w,y_w, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
+The QQplot shows that points does not perfectly fall on the y=x line. This means that estimated distribution does not match the empirical distribution. But it seems that Weibull distribution performs better than normal and gamma distribution.
 
-# MLE parameters
 
-When you want otMLE parameters, you first construct the log-likelihood function and use optimization to find calues that maximize the function
+## MLE 
+
+To solve for unknown parameters, you first construct a joint probability mass function which is also the likelihood function. for mathematical ease, we actually work with the log likelihood function. Finally use optimization to find parameters that maximize the likelihood function.
+
+nll is the negative likelihood function that needs to be minimized, it is the same as maximizing the log likelihood. The it fit funciton, we need to put in stating point as guess for the parameters. BFGS is a method to optimize the likelihood function.
+
+### MLE-normal
 
 ```{r}
 require(stats4)
@@ -152,16 +182,14 @@ nLL <- function(mean, sd){
     ) 
   -sum(fs)
 }
-fit <- mle(
+fit <- stats4::mle(
     nLL
   , start = list(mean = 1, sd = 1)
   , method = "L-BFGS-B"
   , lower = c(0, 0.01)
 )
 
-```
 
-```{r}
 par(mfrow = c(1,3))
 plot(ecdf(d1$gh), main = "ecdf and est cdf of normal")
 curve(
@@ -170,7 +198,7 @@ curve(
   , col = "blue"
   , lwd = 3
 )
-hist(d1$gh, freq = FALSE, main = "")
+hist(d1$gh, freq = FALSE, main = "MLE-Normal")
 curve(
     dnorm(x, coef(fit)[1], coef(fit)[2])
   , add = TRUE
@@ -185,124 +213,142 @@ Y <- qnorm(U)
 qqnorm(Y)
 abline(0,1)
 ```
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
 
 ```{r}
-lm(d1$gh ~ 1) %>% summary
+#lm(d1$gh ~ 1) %>% summary
 ```
 
-
-
-
+### MLE-Gamma
 
 ```{r}
-par(mfrow = c(1,3))
-(shape_h <- coef(fit)[1]^2/coef(fit)[2])
-(scale_h <- coef(fit)[2]/coef(fit)[1])
+require(stats4)
+(shape_hat <- xbar^2/s2)
+(scale_hat <- s2/xbar)
+nll <- function(shape, scale){
+ fs <- dgamma(x=d1$gh, shape = shape, scale = scale, log = TRUE)
+ -sum(fs)
+}
+m1 <- stats4::mle(
+    nll
+  , method = "L-BFGS-B"
+  , lower = c(0,0)
+  , start = list(shape = 29.59754, scale = 0.1934147)
+)
 
-plot(ecdf(d1$gh), main = "")
-curve(
-    pgamma(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
-)
-hist(d1$gh, freq = FALSE, main = "")
-curve(
-    dgamma(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
-)
-abline(v=qgamma(0.5, shape=shape_h, scale=scale_h),col="purple",lwd=2)
-(qgamma(0.5, shape=shape_h, scale=scale_h))
+
+par(mfrow = c(1,3))
+hist(d1$gh, main = "", freq = FALSE)
+curve(dgamma(x, shape = m1@coef[1], scale = m1@coef[2]), add = TRUE, lwd = 3, col = "steelblue")
+
+
+plot(ecdf(d1$gh), main = "ECDF-MLE-Gamma")
+curve(pgamma(x, shape = m1@coef[1], scale = m1@coef[2]), add = TRUE, lwd = 3, col = "steelblue")
+
+
 
 
 U <- runif(1000)
-Y <- qgamma(U, shape = shape_h, scale = scale_h)
-ps <- ppoints(1000)
-theoretical <- qgamma(ps, shape = shape_h, scale = scale_h)
-sample <- quantile(Y, ps)
-plot(theoretical, sample)
+Y <- qgamma(U, shape = shape_hat, scale = scale_hat)
+pts <- ppoints(1000)
+theoretical_q <- qgamma(pts, shape = shape_hat, scale = scale_hat)
+sample_q <- quantile(Y, pts)
+plot(theoretical_q,sample_q, main="QQ-plot of MLE gamma",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+
+### MLE-Weibull
 
 ```{r}
+par(mfrow = c(1,3))
+
+
+wll <- function(shape_weib, scale_weib){
+ fs <- dweibull(x=d1$gh, shape = shape_weib, scale = scale_weib, log = TRUE)
+ -sum(fs)
+}
+w1 <- stats4::mle(
+    wll
+  , method = "L-BFGS-B"
+  , lower = c(0,0.01)
+  , start = list(shape_weib = 10.00008, scale_weib = 6)
+)
+
 
 par(mfrow = c(1,3))
-plot(ecdf(d1$gh), main = "")
-curve(
-    pweibull(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
-)
-hist(d1$gh, freq = FALSE, main = "")
-curve(
-    dweibull(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
-)
+hist(d1$gh, main = "", freq = FALSE)
+curve(dweibull(x, shape = w1@coef[1], scale = w1@coef[2]), add = TRUE, lwd = 2, col = "steelblue")
+abline(v=qweibull(0.5,shape= w1@coef[1], scale = w1@coef[2]),lty=2,col = "steelblue")
+
+plot(ecdf(d1$gh), main = "ECDF-MLE_Weibull")
+curve(pweibull(x, shape = w1@coef[1], scale = w1@coef[2]), add = TRUE, lwd = 2, col = "steelblue")
+
+
 
 U <- runif(1000)
-Y <- qweibull(U, shape = shape_hat, scale = scale_hat)
+Y <- qweibull(U, shape = shape_weib, scale = scale_weib)
 ps <- ppoints(1000)
-theoretical <- qweibull(ps, shape = shape_hat, scale = scale_hat)
+theoretical <- qweibull(ps, shape = shape_weib, scale = scale_weib)
 sample <- quantile(Y, ps)
-plot(theoretical, sample)
+plot(theoretical,sample, main="QQ-plot of MLE Weibull",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
 
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
 
-Height:
+
+## MM Height:
+
+### MM-Normal
 
 ```{r}
 par(mfrow = c(1,3))
-hist(d1$ht, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+hist(d1$ht, freq = FALSE, main = "Histogram of Height", breaks=10,)
 #parameters
 (xbar <- mean(d1$ht))
 (s2 <- var(d1$ht))
 
 #estimated pdf
-curve(dnorm(x, mean=xbar, sd = s2),0,14,add=TRUE, lwd=3, col="steelblue")
-#curve(dgamma(x, shape=shape_hat, scale=scale_hat),0,14,add =T,lwd=3, col="purple")
+curve(dnorm(x, mean=xbar, sd = sqrt(s2)),add=TRUE, lwd=2, col="yellow",lty=2)
 #norm_median
-(norm_median <- qnorm(0.5, mean=xbar, sd = s2))
-abline(v=norm_median,col="steelblue",lwd=2)
+abline(v=qnorm(0.5, mean=xbar, sd = sqrt(s2)),lwd=2,col="yellow")
 
 #ecdf, estimated cdf
 plot(ecdf(d1$ht),main="ecdf and estimated cdf of normal")
-curve(pnorm(x, mean=xbar, sd=s2),add=TRUE, lwd=3, col="steelblue")
+curve(pnorm(x, mean=xbar, sd=sqrt(s2)),add=TRUE, lwd=2, col="yellow")
 
 #QQplot
 sq <- seq(0.05,0.95,by=0.05)
 #empirical
 qt <- quantile(d1$ht, sq)
 #theoretical
-qn <- qnorm(sq, mean=xbar, sd=s2)
+qn <- qnorm(sq, mean=xbar, sd=sqrt(s2))
 plot(qn,qt, main="QQ-plot of normal",xlab="theoretical", ylab="empirical")
 # y=x line
 abline(0,1)
 ```
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
 
+### MM-Gamma
 
 ```{r}
 par(mfrow = c(1,3))
-hist(d1$ht, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
+hist(d1$ht, freq = FALSE, main = "Histogram of Height", breaks=10)
 #parameters
 (shape_hat <- xbar^2/s2)
 (scale_hat <- s2/xbar)
 #est pdf
-curve(dgamma(x, shape=shape_hat, scale=scale_hat),0,14,add =T,lwd=3, col="purple")
+curve(dgamma(x, shape=shape_hat, scale=scale_hat),add =T,lwd=2, col="purple")
 
-#meidan
+#meida
 abline(v=qgamma(0.5, shape=shape_hat, scale=scale_hat),col="purple",lwd=2)
-(qgamma(0.5, shape=shape_hat, scale=scale_hat))
+#(qgamma(0.5, shape=shape_hat, scale=scale_hat))
 
 #ecdf
 plot(ecdf(d1$ht),main="ecdf and estimated cdf of gamma")
 #est ecdf
-curve(pgamma(x, shape=shape_hat,scale=scale_hat),add=TRUE,lwd=3, col="purple")
+curve(pgamma(x, shape=shape_hat,scale=scale_hat),add=TRUE,lwd=2, col="purple")
 
 #QQ-plot
 sq <- seq(0.05,0.95,by=0.05)
@@ -312,6 +358,9 @@ qga <- qgamma(sq, shape=shape_hat,scale=scale_hat)
 plot(qga,qt, main="QQ-plot of gamma",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+
+### MM-Weibull
 
 ```{r}
 par(mfrow = c(1,3))
@@ -330,31 +379,33 @@ mm.opt <- optimize(f=function(x){
 mm.weib.k <- mm.opt$minimum
 mm.weib.lambda=(xbar/gamma(1+1/mm.weib.k))
 
-(shape = mm.weib.k)
-(scale= mm.weib.lambda)
+shape_weib = mm.weib.k
+scale_weib= mm.weib.lambda
 
 #est pdf
-hist(d1$ht, freq = FALSE, main = "Histogram of Glycohemiglobin", breaks=100)
-curve(dweibull(x,shape=shape, scale=scale),  add=TRUE, lwd=3, col="red")
+hist(d1$ht, freq = FALSE, main = "Histogram of height", breaks=100)
+curve(dweibull(x,shape=shape_weib, scale=scale_weib),  add=TRUE, lwd=3, col="red")
 #meidan
-abline(v=qweibull(0.5, shape=shape, scale=scale),col="red",lwd=2)
-(qweibull(0.5, shape=shape, scale=scale))
+abline(v=qweibull(0.5, shape = shape_weib, scale = scale_weib), col="red",lwd=2)
+#(qweibull(0.5, shape=shape, scale=scale))
 
 #ecdf
 plot(ecdf(d1$ht),main="ecdf and estimated cdf of Weibill")
 #est ecdf
-curve(pweibull(x, shape=shape,scale=scale),0,14,add=T,lwd=3, col="red")
+curve(pweibull(x, shape=shape_weib,scale=scale_weib),add=T,lwd=3, col="red")
 
 #QQ-plot
 sq <- seq(0.05,0.95,by=0.05)
 qt <- quantile(d1$ht, sq)
-qga <- qweibull(sq, shape=shape,scale=scale)
-
+qga <- qweibull(sq, shape=shape_weib,scale=scale_weib)
 plot(qga,qt, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
 
-# MLE
+## MLE-Height
+
+### MLE-normal
 
 ```{r}
 require(stats4)
@@ -392,77 +443,92 @@ curve(
   , col = "blue"
   , lwd = 3
 )
-median_norm <- qnorm(0.5, mean=coef(fit)[1], sd=coef(fit)[2])
-abline(v=median_norm, col="blue",lwd=3)
+#median
+abline(v=qnorm(0.5, mean=xbar, sd=s2), col="blue",lwd=3)
 
 U <- runif(1000)
 Y <- qnorm(U)
 qqnorm(Y)
 abline(0,1)
 ```
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+
+### MLE-Gamma
+
+```{r}
+#gamma
+(shape_hat <- xbar^2/s2)
+(scale_hat <- s2/xbar)
+nll <- function(shape, scale){
+ fs <- dgamma(x=d1$ht, shape = shape, scale = scale, log = TRUE)
+ -sum(fs)
+}
+m1 <- stats4::mle(
+    nll
+  , method = "L-BFGS-B"
+  , lower = c(0,0)
+  , start = list(shape = 482.1886, scale = 0.333359)
+)
 
 
+par(mfrow = c(1,3))
+hist(d1$ht, main = "Estimated PDF", freq = FALSE)
+curve(dgamma(x, shape = m1@coef[1], scale = m1@coef[2]), add = TRUE, lwd = 3, col = "blue")
+abline(v=qgamma(0.5, shape = shape_hat, scale = scale_hat),col ="blue", lty=2)
+       
+plot(ecdf(d1$ht), main = "ECDF")
+curve(pgamma(x, shape = m1@coef[1], scale = m1@coef[2]), add = TRUE, lwd = 3, col = "blue")
+
+U <- runif(1000)
+Y <- qgamma(U, shape = shape_hat, scale = scale_hat)
+ps <- ppoints(1000)
+theoretical <- qgamma(ps, shape = shape_hat, scale = scale_hat)
+sample <- quantile(Y, ps)
+plot(theoretical, sample,main="QQ-plot of MLE gamma",xlab="theoretical", ylab="empirical")
+abline(0,1)
+```
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+
+### MLE-Weibull
 
 ```{r}
 par(mfrow = c(1,3))
-(shape_h <- coef(fit)[1]^2/coef(fit)[2])
-(scale_h <- coef(fit)[2]/coef(fit)[1])
+shape_weib = mm.weib.k
+scale_weib= mm.weib.lambda
 
-plot(ecdf(d1$ht), main = "")
-curve(
-    pgamma(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
+require(stats4)
+wll <- function(shape_weib, scale_weib){
+ fs <- dweibull(x=d1$ht, shape = shape_weib, scale = scale_weib, log = TRUE)
+ -sum(fs)
+}
+w1 <- stats4::mle(
+    wll
+  , method = "L-BFGS-B"
+  , lower = c(1,0.01)
+  , start = list(shape_weib = 27.45942, scale_weib = 163.9807)
 )
-hist(d1$ht, freq = FALSE, main = "")
-curve(
-    dgamma(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
-)
-abline(v=qgamma(0.5, shape=shape_h, scale=scale_h),col="purple",lwd=2)
-(qgamma(0.5, shape=shape_h, scale=scale_h))
 
-
-U <- runif(1000)
-Y <- qgamma(U, shape = shape_h, scale = scale_h)
-ps <- ppoints(1000)
-theoretical <- qgamma(ps, shape = shape_h, scale = scale_h)
-sample <- quantile(Y, ps)
-plot(theoretical, sample)
-abline(0,1)
-```
-
-```{r}
 
 par(mfrow = c(1,3))
-plot(ecdf(d1$ht), main = "")
-curve(
-    pweibull(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
-)
-hist(d1$ht, freq = FALSE, main = "")
-curve(
-    dweibull(x, coef(fit)[1], coef(fit)[2])
-  , add = TRUE
-  , col = "blue"
-  , lwd = 3
-)
+hist(d1$ht, main = "Estimated PDF", freq = FALSE)
+curve(dweibull(x, shape = w1@coef[1], scale = w1@coef[2]), add = TRUE, lwd = 2, col = "blue")
+abline(v=qweibull(0.5, shape = w1@coef[1], scale = w1@coef[2]),col="blue",lwd=2, lty=2)
+
+plot(ecdf(d1$ht), main = "ECDF")
+curve(pweibull(x, shape = w1@coef[1], scale = w1@coef[2]), add = TRUE, lwd = 2, col = "blue")
+
 
 U <- runif(1000)
-Y <- qweibull(U, shape = shape_hat, scale = scale_hat)
+Y <- qweibull(U, shape = shape_weib, scale = scale_weib)
 ps <- ppoints(1000)
-theoretical <- qweibull(ps, shape = shape_hat, scale = scale_hat)
+theoretical <- qweibull(ps, shape = shape_weib, scale = scale_weib)
 sample <- quantile(Y, ps)
-plot(theoretical, sample)
+plot(theoretical, sample,main="QQ-plot of MLE",xlab="theoretical", ylab="empirical")
 abline(0,1)
+
 ```
 
-
+The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
 
 
 
