@@ -9,6 +9,9 @@ output:
     number_sections: yes
     toc_depth: 3
     toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 # Introduction
@@ -133,7 +136,7 @@ var.weib <- function(k,m_hat, var_hat){
 x=seq(10,40, by=0.1)
 mm.opt <- optimize(f=function(x){
   abs(var.weib(k=x, m_hat=mean(d1$gh),var_hat=var(d1$gh)))
-}, lower=10, upper=100)
+}, lower=5, upper=100)
 mm.weib.k <- mm.opt$minimum
 mm.weib.lambda=(xbar/gamma(1+1/mm.weib.k))
 
@@ -208,12 +211,17 @@ curve(
 median_norm <- qnorm(0.5, mean=coef(fit)[1], sd=coef(fit)[2])
 abline(v=median_norm, col="blue",lwd=3)
 
-U <- runif(1000)
-Y <- qnorm(U)
-qqnorm(Y)
+#QQplot
+sq <- seq(0.05,0.95,by=0.05)
+#empirical
+qt <- quantile(d1$gh, sq)
+#theoretical
+qn <- qnorm(sq, mean=coef(fit)[1], sd=coef(fit)[2])
+plot(qn,qt, main="QQ-plot of normal distribution",xlab="theoretical", ylab="empirical")
+# y=x line
 abline(0,1)
 ```
-The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+The QQplot shows that points did not fall on the y=x line. This means that estimated distribution does not match the empirical distribution.
 
 ```{r}
 #lm(d1$gh ~ 1) %>% summary
@@ -246,17 +254,21 @@ plot(ecdf(d1$gh), main = "ECDF-MLE-Gamma")
 curve(pgamma(x, shape = m1@coef[1], scale = m1@coef[2]), add = TRUE, lwd = 3, col = "steelblue")
 
 
-
-
-U <- runif(1000)
-Y <- qgamma(U, shape = shape_hat, scale = scale_hat)
-pts <- ppoints(1000)
-theoretical_q <- qgamma(pts, shape = shape_hat, scale = scale_hat)
-sample_q <- quantile(Y, pts)
-plot(theoretical_q,sample_q, main="QQ-plot of MLE gamma",xlab="theoretical", ylab="empirical")
+sq <- seq(0.05,0.95,by=0.05)
+qt_y <- quantile(d1$gh, sq)
+ga_x <- qgamma(sq, shape = m1@coef[1], scale = m1@coef[2])
+plot(ga_x,qt_y, main="QQ-plot of gamma",xlab="theoretical", ylab="empirical")
 abline(0,1)
+
+#U <- runif(1000)
+#Y <- qgamma(U, shape = shape_hat, scale = scale_hat)
+#pts <- ppoints(1000)
+#theoretical_q <- qgamma(pts, shape = shape_hat, scale = scale_hat)
+#sample_q <- quantile(Y, pts)
+#plot(theoretical_q,sample_q, main="QQ-plot of MLE gamma",xlab="theoretical", ylab="empirical")
+#abline(0,1)
 ```
-The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+The QQplot shows that points di not fall on the y=x line. This means that estimated distribution does not match the empirical distribution.
 
 ### MLE-Weibull
 
@@ -284,18 +296,22 @@ abline(v=qweibull(0.5,shape= w1@coef[1], scale = w1@coef[2]),lty=2,col = "steelb
 plot(ecdf(d1$gh), main = "ECDF-MLE_Weibull")
 curve(pweibull(x, shape = w1@coef[1], scale = w1@coef[2]), add = TRUE, lwd = 2, col = "steelblue")
 
-
-
-U <- runif(1000)
-Y <- qweibull(U, shape = shape_weib, scale = scale_weib)
-ps <- ppoints(1000)
-theoretical <- qweibull(ps, shape = shape_weib, scale = scale_weib)
-sample <- quantile(Y, ps)
-plot(theoretical,sample, main="QQ-plot of MLE Weibull",xlab="theoretical", ylab="empirical")
+sq <- seq(0.05,0.95,by=0.05)
+y_w <- quantile(d1$gh, sq)
+x_w <- qweibull(sq, shape = w1@coef[1], scale = w1@coef[2])
+plot(x_w,y_w, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
 abline(0,1)
+
+#U <- runif(1000)
+#Y <- qweibull(U, shape = shape_weib, scale = scale_weib)
+#ps <- ppoints(1000)
+#theoretical <- qweibull(ps, shape = shape_weib, scale = scale_weib)
+#sample <- quantile(Y, ps)
+#plot(theoretical,sample, main="QQ-plot of MLE Weibull",xlab="theoretical", ylab="empirical")
+#abline(0,1)
 ```
 
-The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+The QQplot shows that points did not fall on the y=x line. This means that estimated distribution does not match the empirical distribution.
 
 
 ## MM Height:
@@ -446,9 +462,13 @@ curve(
 #median
 abline(v=qnorm(0.5, mean=xbar, sd=s2), col="blue",lwd=3)
 
-U <- runif(1000)
-Y <- qnorm(U)
-qqnorm(Y)
+sq <- seq(0.05,0.95,by=0.05)
+#empirical
+qt <- quantile(d1$ht, sq)
+#theoretical
+qn <- qnorm(sq, mean=coef(fit)[1], sd=coef(fit)[2])
+plot(qn,qt, main="QQ-plot of normal",xlab="theoretical", ylab="empirical")
+# y=x line
 abline(0,1)
 ```
 The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
@@ -479,12 +499,10 @@ abline(v=qgamma(0.5, shape = shape_hat, scale = scale_hat),col ="blue", lty=2)
 plot(ecdf(d1$ht), main = "ECDF")
 curve(pgamma(x, shape = m1@coef[1], scale = m1@coef[2]), add = TRUE, lwd = 3, col = "blue")
 
-U <- runif(1000)
-Y <- qgamma(U, shape = shape_hat, scale = scale_hat)
-ps <- ppoints(1000)
-theoretical <- qgamma(ps, shape = shape_hat, scale = scale_hat)
-sample <- quantile(Y, ps)
-plot(theoretical, sample,main="QQ-plot of MLE gamma",xlab="theoretical", ylab="empirical")
+sq <- seq(0.05,0.95,by=0.05)
+qt <- quantile(d1$ht, sq)
+qga <- qgamma(sq, shape = m1@coef[1], scale = m1@coef[2])
+plot(qga,qt, main="QQ-plot of gamma",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
 The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
@@ -518,17 +536,15 @@ plot(ecdf(d1$ht), main = "ECDF")
 curve(pweibull(x, shape = w1@coef[1], scale = w1@coef[2]), add = TRUE, lwd = 2, col = "blue")
 
 
-U <- runif(1000)
-Y <- qweibull(U, shape = shape_weib, scale = scale_weib)
-ps <- ppoints(1000)
-theoretical <- qweibull(ps, shape = shape_weib, scale = scale_weib)
-sample <- quantile(Y, ps)
-plot(theoretical, sample,main="QQ-plot of MLE",xlab="theoretical", ylab="empirical")
+sq <- seq(0.05,0.95,by=0.05)
+qt <- quantile(d1$ht, sq)
+qga <- qweibull(sq, shape = w1@coef[1], scale = w1@coef[2])
+plot(qga,qt, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
 abline(0,1)
 
 ```
 
-The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+The QQplot shows that points did not perfectly fall on the y=x line. This means that estimated distribution does not match the empirical distribution.
 
 
 
