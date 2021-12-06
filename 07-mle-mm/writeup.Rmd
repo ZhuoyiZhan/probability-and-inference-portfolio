@@ -417,7 +417,7 @@ qga <- qweibull(sq, shape=shape_weib,scale=scale_weib)
 plot(qga,qt, main="QQ-plot of weibull",xlab="theoretical", ylab="empirical")
 abline(0,1)
 ```
-The QQplot shows that points fall on the y=x line. This means that estimated distribution matches the empirical distribution.
+The QQplot shows that points does not all  fall on the y=x line. This means that estimated distribution does not match the empirical distribution.
 
 ## MLE-Height
 
