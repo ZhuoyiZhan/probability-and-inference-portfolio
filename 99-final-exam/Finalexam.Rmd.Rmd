@@ -544,7 +544,7 @@ prop.test(x=c(600+30,619+35),n=c(1000+100,1000+100))
 
 **B.** Explain why predictions from a conditional distribution generally have smaller prediction error than predictions from the marginal distribution.
 
-## conditional distribution has smaller variance so smaller average prediction error. conditional givesprobabilities contingent upon the values of the other variables. by summing values in a table along rows or columns
+## conditional distribution has smaller variance so smaller average prediction error. Conditional gives probabilities contingent upon the values of the other variables. Marginal distribution gives pribability by summing values in a table along rows or columns. Joint probability divided by marginal pribability is the conditional probability. 
 
 **A.** Use the CLT shortcut to calculate the 95% confidence interval for the correlation of arm circumference and arm length using the NHANES dataset.  Is the sample correlation a reasonable measure of association for this data?
 
